@@ -6,7 +6,7 @@ Frontend:
 - Shadcn/ui
 
 Backend
-- Supabase
+- Python/FastAPI
 
 AI - Komunikacja z modelami
 - local host or openAI api

@@ -1,0 +1,10 @@
+## DEVOPS
+
+### Guidelines for CI_CD
+
+#### GITLAB_CI
+
+- Use includes to reuse configuration across multiple pipelines
+- Implement caching for dependencies to speed up builds
+- Use rules and only/except to control when jobs run based on {{branch_patterns}}
+
