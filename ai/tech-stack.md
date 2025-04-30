@@ -15,3 +15,6 @@ CI/CD i Hosting:
 - Github Actions
 - DigitalOcean
 - Vitest
+
+Database:
+- Supabase

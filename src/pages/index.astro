@@ -1,11 +1,85 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import RecipeGenerator from '../components/RecipeGenerator';
+import HeroButtons from '../components/HeroButtons';
+import CtaButton from '../components/CtaButton';
 ---
 
-<Layout title="Na Winie - Grab & Cook">
-	<main class="container mx-auto px-4 py-8">
-		<h1 class="text-4xl font-bold text-center mb-8">Na Winie - Grab & Cook</h1>
-		<RecipeGenerator client:load />
-	</main>
+<Layout title="Turn Leftovers into Delicious Meals">
+	<!-- Hero Section -->
+	<section class="py-20 md:py-32">
+		<div class="container mx-auto px-4">
+			<div class="max-w-4xl mx-auto text-center">
+				<h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+					Transform Your Leftovers into
+					<span class="text-emerald-600">Culinary Magic</span>
+				</h1>
+				<p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
+					Enter your available ingredients and discover creative recipes that help reduce food waste while creating delicious meals.
+				</p>
+				<HeroButtons client:load />
+			</div>
+		</div>
+	</section>
+
+	<!-- Features Section -->
+	<section class="py-20 bg-gray-50 dark:bg-gray-800">
+		<div class="container mx-auto px-4">
+			<h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-12">
+				How It Works
+			</h2>
+			
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+				<div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm">
+					<div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center mb-4">
+						<span class="text-2xl text-emerald-600">1</span>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+						Input Your Ingredients
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400">
+						Tell us what ingredients you have in your kitchen, and mark your pantry staples.
+					</p>
+				</div>
+
+				<div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm">
+					<div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center mb-4">
+						<span class="text-2xl text-emerald-600">2</span>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+						Get Recipe Suggestions
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400">
+						Browse through personalized recipe suggestions based on what you have available.
+					</p>
+				</div>
+
+				<div class="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-sm">
+					<div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-full flex items-center justify-center mb-4">
+						<span class="text-2xl text-emerald-600">3</span>
+					</div>
+					<h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+						Cook & Share
+					</h3>
+					<p class="text-gray-600 dark:text-gray-400">
+						Follow easy recipes, rate them, and share your own creations with the community.
+					</p>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA Section -->
+	<section class="py-20">
+		<div class="container mx-auto px-4">
+			<div class="max-w-3xl mx-auto text-center">
+				<h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+					Ready to Start Cooking?
+				</h2>
+				<p class="text-xl text-gray-600 dark:text-gray-400 mb-8">
+					Join our community of creative home cooks and start turning your ingredients into amazing meals today.
+				</p>
+				<CtaButton client:load />
+			</div>
+		</div>
+	</section>
 </Layout> 
