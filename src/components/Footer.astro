@@ -1,0 +1,70 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer class="w-full border-t border-gray-200 dark:border-gray-800 py-12 mt-12">
+  <div class="container mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div class="space-y-4">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Na Winie</h3>
+        <p class="text-gray-600 dark:text-gray-400">
+          Turn your leftover ingredients into delicious meals
+        </p>
+      </div>
+      
+      <div class="space-y-4">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Quick Links</h4>
+        <ul class="space-y-2">
+          <li>
+            <a href="/recipes" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              Recipes
+            </a>
+          </li>
+          <li>
+            <a href="/ingredients" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              My Ingredients
+            </a>
+          </li>
+          <li>
+            <a href="/about" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              About Us
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="space-y-4">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Legal</h4>
+        <ul class="space-y-2">
+          <li>
+            <a href="/privacy" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              Privacy Policy
+            </a>
+          </li>
+          <li>
+            <a href="/terms" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              Terms of Service
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <div class="space-y-4">
+        <h4 class="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">Contact</h4>
+        <ul class="space-y-2">
+          <li>
+            <a href="mailto:contact@nawinie.com" class="text-gray-600 hover:text-emerald-600 dark:text-gray-400 dark:hover:text-emerald-500">
+              contact@nawinie.com
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-800">
+      <p class="text-center text-gray-600 dark:text-gray-400">
+        © {currentYear} Na Winie. All rights reserved.
+      </p>
+    </div>
+  </div>
+</footer> 

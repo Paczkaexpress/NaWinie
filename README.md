@@ -28,9 +28,9 @@ A web application that helps you turn your leftover ingredients into delicious m
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.8+
-- pnpm (recommended) or npm
+- Node.js 22+
+- Python 3.9+
+- npm
 
 ### Installation
 
@@ -42,7 +42,7 @@ cd nawinie
 
 2. Install frontend dependencies:
 ```bash
-pnpm install
+npm install
 ```
 
 3. Install backend dependencies:
@@ -63,7 +63,7 @@ JWT_SECRET=your-secret-key
 
 1. Start the frontend development server:
 ```bash
-pnpm dev
+npm run dev
 ```
 
 2. Start the backend server:
@@ -81,7 +81,7 @@ The application will be available at:
 
 ### Frontend Tests
 ```bash
-pnpm test
+npm test
 ```
 
 ### Backend Tests

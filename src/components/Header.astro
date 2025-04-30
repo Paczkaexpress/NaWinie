@@ -1,0 +1,29 @@
+---
+import HeaderButtons from './HeaderButtons';
+---
+
+<header class="w-full border-b border-gray-200 dark:border-gray-800">
+  <div class="container mx-auto px-4">
+    <nav class="flex items-center justify-between h-16">
+      <a href="/" class="flex items-center space-x-2">
+        <span class="text-2xl font-bold text-emerald-600">Na Winie</span>
+      </a>
+      
+      <div class="hidden md:flex items-center space-x-6">
+        <a href="/recipes" class="text-gray-600 hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-500">
+          Recipes
+        </a>
+        <a href="/ingredients" class="text-gray-600 hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-500">
+          My Ingredients
+        </a>
+        <a href="/about" class="text-gray-600 hover:text-emerald-600 dark:text-gray-300 dark:hover:text-emerald-500">
+          About
+        </a>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <HeaderButtons client:load />
+      </div>
+    </nav>
+  </div>
+</header> 
