@@ -105,10 +105,13 @@ class RateLimitConfig:
     
     # Limits: (requests_per_minute, window_seconds)
     LIMITS = {
-        'ingredients_get': (100, 60),      # 100 GET requests/minute
-        'ingredients_post': (10, 60),      # 10 POST requests/minute  
-        'ingredients_get_by_id': (200, 60), # 200 GET by ID/minute
-        'general': (1000, 60),             # 1000 requests/minute overall
+        'ingredients_get': (100, 60),        # 100 GET requests/minute
+        'ingredients_post': (10, 60),        # 10 POST requests/minute  
+        'ingredients_get_by_id': (200, 60),  # 200 GET by ID/minute
+        'user_defaults_get': (200, 60),      # 200 GET user defaults/minute
+        'user_defaults_post': (20, 60),      # 20 POST user defaults/minute
+        'user_defaults_delete': (50, 60),    # 50 DELETE user defaults/minute
+        'general': (1000, 60),               # 1000 requests/minute overall
     }
     
     @classmethod

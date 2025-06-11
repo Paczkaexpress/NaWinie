@@ -11,6 +11,7 @@ from ..models.responses import (
     PaginatedUserDefaultIngredientsResponse,
     UserDefaultIngredientAddedDto
 )
+from ..utils.rate_limiter import rate_limit_dependency
 
 router = APIRouter(prefix="/users/me/default-ingredients", tags=["user-default-ingredients"])
 
@@ -60,7 +61,8 @@ async def get_user_default_ingredients(
     db: Annotated[Session, Depends(get_db)],
     page: int = Query(1, ge=1, description="Numer strony"),
     limit: int = Query(50, ge=1, le=100, description="Liczba elementów na stronę"),
-    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service)
+    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service),
+    _rate_limit: None = Depends(rate_limit_dependency("user_defaults_get"))
 ) -> PaginatedUserDefaultIngredientsResponse:
     """
     Pobiera listę domyślnych składników użytkownika z paginacją.
@@ -164,7 +166,8 @@ async def add_user_default_ingredient(
     command: AddUserDefaultIngredientCommand,
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)],
-    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service)
+    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service),
+    _rate_limit: None = Depends(rate_limit_dependency("user_defaults_post"))
 ) -> UserDefaultIngredientAddedDto:
     """
     Dodaje składnik do listy domyślnych składników użytkownika.
@@ -259,7 +262,8 @@ async def remove_user_default_ingredient(
     ingredient_id: UUID,
     current_user_id: Annotated[str, Depends(get_current_user_id)],
     db: Annotated[Session, Depends(get_db)],
-    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service)
+    service: UserDefaultIngredientsService = Depends(get_user_default_ingredients_service),
+    _rate_limit: None = Depends(rate_limit_dependency("user_defaults_delete"))
 ):
     """
     Usuwa składnik z listy domyślnych składników użytkownika.

@@ -13,6 +13,7 @@ from .models import User, Ingredient, UserDefaultIngredient  # Import implemente
 from .utils.logging_config import setup_logging, get_logger
 from .utils.monitoring import TimingMiddleware
 from .utils.openapi_config import custom_openapi
+from .utils.security_middleware import SecurityMiddleware, InputSanitizationMiddleware
 from .utils.error_handlers import (
     validation_exception_handler,
     http_exception_handler,
@@ -50,7 +51,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add performance monitoring middleware
+# Add security and performance monitoring middleware
+app.add_middleware(SecurityMiddleware)
+# Temporarily disable InputSanitizationMiddleware due to hanging issues
+# app.add_middleware(InputSanitizationMiddleware)
 app.add_middleware(TimingMiddleware)
 
 # Configure exception handlers

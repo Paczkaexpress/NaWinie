@@ -149,8 +149,9 @@ class TestUserDefaultIngredientsEndpoints:
             headers=auth_headers
         )
         
-        assert response.status_code == 400
-        assert "Numer strony musi być większy niż 0" in response.json()["detail"]
+        assert response.status_code == 422  # FastAPI validation error
+        # Check that the error is about page validation
+        assert "page" in str(response.json())
         
         # Test limit > 100
         response = client.get(
@@ -158,8 +159,9 @@ class TestUserDefaultIngredientsEndpoints:
             headers=auth_headers
         )
         
-        assert response.status_code == 400
-        assert "Limit musi być między 1 a 100" in response.json()["detail"]
+        assert response.status_code == 422  # FastAPI validation error  
+        # Check that the error is about limit validation
+        assert "limit" in str(response.json())
 
     def test_add_user_default_success(
         self, 
