@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List
+from uuid import UUID
 
 class RecipeViewHistoryItem(BaseModel):
     """Model reprezentujący element historii przeglądania przepisów użytkownika."""
@@ -34,4 +35,20 @@ class UserResponse(BaseModel):
     updated_at: Optional[datetime] = None
     
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+class IngredientResponse(BaseModel):
+    """Model odpowiedzi dla pojedynczego składnika."""
+    id: UUID
+    name: str
+    unit_type: str
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+class PaginatedIngredientsResponse(BaseModel):
+    """Model paginowanej odpowiedzi z listą składników."""
+    data: List[IngredientResponse]
+    pagination: PaginationInfo 

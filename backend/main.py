@@ -3,8 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 # from .routers import auth, recipes, ingredients  # Commented out until routers are implemented
 from .routers import users  # Import users router
 from .database import engine, Base
-from .models import User  # Import only implemented models
-# from .models import Recipe, RecipeIngredient, Ingredient, Rating  # Commented out until implemented
+from .models import User, Ingredient  # Import implemented models
+# from .models import Recipe, RecipeIngredient, Rating  # Commented out until implemented
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
