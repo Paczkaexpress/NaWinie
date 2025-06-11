@@ -51,4 +51,28 @@ class IngredientResponse(BaseModel):
 class PaginatedIngredientsResponse(BaseModel):
     """Model paginowanej odpowiedzi z listą składników."""
     data: List[IngredientResponse]
+    pagination: PaginationInfo
+
+class UserDefaultIngredientDto(BaseModel):
+    """Model reprezentujący domyślny składnik użytkownika."""
+    ingredient_id: UUID
+    name: str
+    unit_type: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserDefaultIngredientAddedDto(BaseModel):
+    """Model potwierdzenia dodania składnika do domyślnych."""
+    user_id: UUID
+    ingredient_id: UUID
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class PaginatedUserDefaultIngredientsResponse(BaseModel):
+    """Model paginowanej odpowiedzi z listą domyślnych składników użytkownika."""
+    data: List[UserDefaultIngredientDto]
     pagination: PaginationInfo 
