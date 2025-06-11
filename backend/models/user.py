@@ -13,7 +13,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships (commented out until models are implemented)
-    # recipes = relationship("Recipe", back_populates="author")
-    # ratings = relationship("Rating", back_populates="user")
+    # Relationships
+    recipes = relationship("Recipe", back_populates="author")
+    recipe_ratings = relationship("RecipeRating", back_populates="user")
     default_ingredients = relationship("UserDefaultIngredient", back_populates="user") 
