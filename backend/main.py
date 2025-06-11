@@ -5,12 +5,14 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from pydantic import ValidationError
 
 # from .routers import auth, recipes  # Commented out until routers are implemented
-from .routers import users, ingredients  # Import implemented routers
+from .routers import users, ingredients, monitoring  # Import implemented routers
 from .database import engine, Base
 from .models import User, Ingredient  # Import implemented models
 # from .models import Recipe, RecipeIngredient, Rating  # Commented out until implemented
 
 from .utils.logging_config import setup_logging, get_logger
+from .utils.monitoring import TimingMiddleware
+from .utils.openapi_config import custom_openapi
 from .utils.error_handlers import (
     validation_exception_handler,
     http_exception_handler,
@@ -36,6 +38,9 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Configure custom OpenAPI documentation
+app.openapi = lambda: custom_openapi(app)
+
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
@@ -44,6 +49,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add performance monitoring middleware
+app.add_middleware(TimingMiddleware)
 
 # Configure exception handlers
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
@@ -57,6 +65,7 @@ app.add_exception_handler(Exception, general_exception_handler)
 # Include routers
 app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(ingredients.router, prefix="/api/ingredients", tags=["Ingredients"])
+app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring"])
 # app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])  # To be implemented
 # app.include_router(recipes.router, prefix="/api/recipes", tags=["Recipes"])  # To be implemented
 

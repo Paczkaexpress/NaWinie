@@ -8,12 +8,15 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 import uuid
+import time
 from datetime import datetime
 
 from backend.main import app
 from backend.database import get_db, Base
 from backend.models.user import User
 from backend.utils.jwt_helper import create_test_token
+from backend.utils.rate_limiter import rate_limiter
+from backend.utils.cache import cache
 
 # Test database setup
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
@@ -97,4 +100,20 @@ def invalid_token():
 @pytest.fixture
 def non_existent_user_token():
     """Generate a JWT token for a non-existent user."""
-    return create_test_token("00000000-0000-0000-0000-000000000000") 
+    return create_test_token("00000000-0000-0000-0000-000000000000")
+
+@pytest.fixture(autouse=True)
+def reset_optimizations():
+    """Reset rate limiter and cache before each test to prevent test interference."""
+    # Clear rate limiter
+    rate_limiter._windows.clear()
+    rate_limiter._last_cleanup = time.time()
+    
+    # Clear cache
+    cache.clear()
+    
+    yield
+    
+    # Cleanup after test
+    rate_limiter._windows.clear()
+    cache.clear() 

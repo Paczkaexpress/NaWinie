@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from typing import Annotated, Optional
 from uuid import UUID
@@ -8,6 +8,8 @@ from ..dependencies.auth import get_current_user_id
 from ..services.ingredient_service import get_ingredient_service, IngredientService
 from ..models.requests import CreateIngredientRequest, IngredientQueryParams
 from ..models.responses import IngredientResponse, PaginatedIngredientsResponse
+from ..utils.rate_limiter import rate_limit_dependency
+from ..utils.cache import CacheManager
 
 router = APIRouter()
 
@@ -41,12 +43,14 @@ router = APIRouter()
     }
 )
 async def get_ingredients(
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
     page: Annotated[int, Query(ge=1, description="Page number")] = 1,
     limit: Annotated[int, Query(ge=1, le=100, description="Items per page")] = 20,
     search: Annotated[Optional[str], Query(max_length=100, description="Search by name")] = None,
     sortBy: Annotated[str, Query(pattern="^(name|unit_type|created_at)$", description="Sort field")] = "name",
-    sortOrder: Annotated[str, Query(pattern="^(asc|desc)$", description="Sort direction")] = "asc"
+    sortOrder: Annotated[str, Query(pattern="^(asc|desc)$", description="Sort direction")] = "asc",
+    _rate_limit: None = Depends(rate_limit_dependency("ingredients_get"))
 ) -> PaginatedIngredientsResponse:
     """
     Pobiera listę składników z obsługą paginacji, wyszukiwania i sortowania.
@@ -78,11 +82,21 @@ async def get_ingredients(
             sortOrder=sortOrder
         )
         
+        # Sprawdź cache
+        query_dict = query_params.model_dump()
+        cached_result = CacheManager.get_cached_ingredients(query_dict)
+        if cached_result:
+            return PaginatedIngredientsResponse(**cached_result)
+        
         # Utwórz serwis składników
         ingredient_service = get_ingredient_service(db)
         
         # Pobierz składniki przez serwis
         ingredients = ingredient_service.get_ingredients(query_params)
+        
+        # Cache wynik
+        CacheManager.cache_ingredients(query_dict, ingredients.model_dump())
+        
         return ingredients
         
     except HTTPException:
@@ -151,7 +165,8 @@ async def get_ingredients(
 async def create_ingredient(
     ingredient_data: CreateIngredientRequest,
     current_user_id: Annotated[str, Depends(get_current_user_id)],
-    db: Annotated[Session, Depends(get_db)]
+    db: Annotated[Session, Depends(get_db)],
+    _rate_limit: None = Depends(rate_limit_dependency("ingredients_post"))
 ) -> IngredientResponse:
     """
     Tworzy nowy składnik w systemie.
@@ -179,6 +194,10 @@ async def create_ingredient(
         
         # Utwórz składnik przez serwis
         new_ingredient = ingredient_service.create_ingredient(ingredient_data, current_user_id)
+        
+        # Invaliduj cache po utworzeniu
+        CacheManager.invalidate_ingredient_caches()
+        
         return new_ingredient
         
     except HTTPException:
@@ -230,7 +249,8 @@ async def create_ingredient(
 )
 async def get_ingredient_by_id(
     ingredient_id: UUID,
-    db: Annotated[Session, Depends(get_db)]
+    db: Annotated[Session, Depends(get_db)],
+    _rate_limit: None = Depends(rate_limit_dependency("ingredients_get_by_id"))
 ) -> IngredientResponse:
     """
     Pobiera szczegóły konkretnego składnika na podstawie ID.
@@ -250,11 +270,21 @@ async def get_ingredient_by_id(
         HTTPException 500: Błędy po stronie serwera
     """
     try:
+        # Sprawdź cache
+        ingredient_id_str = str(ingredient_id)
+        cached_result = CacheManager.get_cached_ingredient(ingredient_id_str)
+        if cached_result:
+            return IngredientResponse(**cached_result)
+        
         # Utwórz serwis składników
         ingredient_service = get_ingredient_service(db)
         
         # Pobierz składnik przez serwis
-        ingredient = ingredient_service.get_ingredient_by_id(str(ingredient_id))
+        ingredient = ingredient_service.get_ingredient_by_id(ingredient_id_str)
+        
+        # Cache wynik
+        CacheManager.cache_ingredient(ingredient_id_str, ingredient.model_dump())
+        
         return ingredient
         
     except HTTPException:
