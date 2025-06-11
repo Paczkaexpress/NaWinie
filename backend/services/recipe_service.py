@@ -3,6 +3,7 @@ from sqlalchemy import and_, or_, desc, asc, func
 from typing import Optional, List
 from uuid import UUID
 import asyncio
+import time
 
 from ..models.recipe import Recipe, RecipeIngredient, RecipeRating, ComplexityLevel
 from ..models.ingredient import Ingredient
@@ -150,30 +151,31 @@ class RecipeService:
         """
         Create a new recipe with ingredients
         """
-        logger.info(f"Creating recipe: {recipe_data.name} for user {author_id}")
-        
-        # Validate ingredients exist
-        ingredient_ids = [ing.ingredient_id for ing in recipe_data.ingredients]
-        existing_ingredients = self.db.query(Ingredient.id).filter(
-            Ingredient.id.in_(ingredient_ids)
-        ).all()
-        existing_ids = {ing.id for ing in existing_ingredients}
-        
-        invalid_ids = set(ingredient_ids) - existing_ids
-        if invalid_ids:
-            raise ValueError(f"Invalid ingredient IDs: {invalid_ids}")
+        start_time = time.time()
         
         try:
+            # Validate ingredients exist
+            ingredient_ids = [ing.ingredient_id for ing in recipe_data.ingredients]
+            existing_ingredients = self.db.query(Ingredient.id).filter(
+                Ingredient.id.in_(ingredient_ids)
+            ).all()
+            existing_ids = {ing.id for ing in existing_ingredients}
+            
+            invalid_ids = set(ingredient_ids) - existing_ids
+            if invalid_ids:
+                error_msg = f"Invalid ingredient IDs: {invalid_ids}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+            
             # Create recipe
             recipe = Recipe(
                 name=recipe_data.name,
                 preparation_time_minutes=recipe_data.preparation_time_minutes,
                 complexity_level=recipe_data.complexity_level,
                 steps=[{"step": step.step, "description": step.description} 
-                       for step in recipe_data.steps],
+                      for step in recipe_data.steps],
                 author_id=author_id
             )
-            
             self.db.add(recipe)
             self.db.flush()  # Get recipe ID
             
@@ -189,6 +191,13 @@ class RecipeService:
                 self.db.add(recipe_ingredient)
             
             self.db.commit()
+            
+            # Log successful creation
+            logger.info(f"Recipe created with ID: {recipe.id}")
+            
+            # Log performance
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info(f"Recipe creation took {duration_ms} ms")
             
             # Reload with ingredients
             recipe = self.db.query(Recipe).options(
@@ -212,29 +221,36 @@ class RecipeService:
         """
         Update an existing recipe (only by author)
         """
-        logger.info(f"Updating recipe {recipe_id} by user {user_id}")
+        start_time = time.time()
         
         recipe = self.db.query(Recipe).filter(Recipe.id == recipe_id).first()
         
         if not recipe:
+            logger.warning(f"Recipe not found for ID: {recipe_id}")
             return None
         
         # Check ownership
         if recipe.author_id != user_id:
-            logger.warning(f"User {user_id} attempted to update recipe {recipe_id} by {recipe.author_id}")
+            logger.warning(f"Access denied to update recipe {recipe_id} by user {user_id}")
             return None
-        
+
         try:
+            updated_fields = []
+            
             # Update recipe fields
             if recipe_data.name is not None:
                 recipe.name = recipe_data.name
+                updated_fields.append("name")
             if recipe_data.preparation_time_minutes is not None:
                 recipe.preparation_time_minutes = recipe_data.preparation_time_minutes
+                updated_fields.append("preparation_time_minutes")
             if recipe_data.complexity_level is not None:
                 recipe.complexity_level = recipe_data.complexity_level
+                updated_fields.append("complexity_level")
             if recipe_data.steps is not None:
                 recipe.steps = [{"step": step.step, "description": step.description} 
                               for step in recipe_data.steps]
+                updated_fields.append("steps")
             
             # Update ingredients if provided
             if recipe_data.ingredients is not None:
@@ -247,7 +263,9 @@ class RecipeService:
                 
                 invalid_ids = set(ingredient_ids) - existing_ids
                 if invalid_ids:
-                    raise ValueError(f"Invalid ingredient IDs: {invalid_ids}")
+                    error_msg = f"Invalid ingredient IDs: {invalid_ids}"
+                    logger.error(error_msg)
+                    raise ValueError(error_msg)
                 
                 # Remove existing ingredients
                 self.db.query(RecipeIngredient).filter(
@@ -264,8 +282,16 @@ class RecipeService:
                         substitute_recommendation=ingredient_data.substitute_recommendation
                     )
                     self.db.add(recipe_ingredient)
+                updated_fields.append("ingredients")
             
             self.db.commit()
+            
+            # Log successful update
+            logger.info(f"Recipe updated with ID: {recipe_id}, updated fields: {updated_fields}")
+            
+            # Log performance
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info(f"Recipe update took {duration_ms} ms")
             
             # Reload with ingredients
             recipe = self.db.query(Recipe).options(
@@ -277,33 +303,35 @@ class RecipeService:
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error updating recipe {recipe_id}: {str(e)}")
+            logger.error(f"Error updating recipe: {str(e)}")
             raise
     
     async def delete_recipe(self, recipe_id: UUID, user_id: UUID) -> bool:
         """
         Delete a recipe (only by author)
         """
-        logger.info(f"Deleting recipe {recipe_id} by user {user_id}")
-        
         recipe = self.db.query(Recipe).filter(Recipe.id == recipe_id).first()
         
         if not recipe:
+            logger.warning(f"Recipe not found for ID: {recipe_id}")
             return False
         
         # Check ownership
         if recipe.author_id != user_id:
-            logger.warning(f"User {user_id} attempted to delete recipe {recipe_id} by {recipe.author_id}")
+            logger.warning(f"Access denied to delete recipe {recipe_id} by user {user_id}")
             return False
-        
+
         try:
             self.db.delete(recipe)
             self.db.commit()
+            
+            # Log successful deletion
+            logger.info(f"Recipe deleted with ID: {recipe_id}")
             return True
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error deleting recipe {recipe_id}: {str(e)}")
+            logger.error(f"Error deleting recipe: {str(e)}")
             raise
     
     async def rate_recipe(
@@ -315,11 +343,10 @@ class RecipeService:
         """
         Rate a recipe (one rating per user per recipe)
         """
-        logger.info(f"Rating recipe {recipe_id} with {rating} by user {user_id}")
-        
         recipe = self.db.query(Recipe).filter(Recipe.id == recipe_id).first()
         
         if not recipe:
+            logger.warning(f"Recipe not found for ID: {recipe_id}")
             return None
         
         # Check if user already rated this recipe
@@ -328,8 +355,9 @@ class RecipeService:
         ).first()
         
         if existing_rating:
+            logger.warning(f"User {user_id} has already rated recipe {recipe_id}")
             raise ValueError("User has already rated this recipe")
-        
+
         try:
             # Create new rating
             recipe_rating = RecipeRating(
@@ -354,6 +382,9 @@ class RecipeService:
             
             self.db.commit()
             
+            # Log successful rating
+            logger.info(f"Recipe rated with ID: {recipe_id}, new average rating: {recipe.average_rating}")
+            
             return RatingUpdateResponse(
                 average_rating=recipe.average_rating,
                 total_votes=recipe.total_votes
@@ -361,7 +392,7 @@ class RecipeService:
             
         except Exception as e:
             self.db.rollback()
-            logger.error(f"Error rating recipe {recipe_id}: {str(e)}")
+            logger.error(f"Error rating recipe: {str(e)}")
             raise
     
     def _get_sort_column(self, sort_field: SortField):

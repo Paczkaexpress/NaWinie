@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Text, DateTime, Float, ForeignKey, JSON, Enum as SQLEnum
+from sqlalchemy import Column, String, Integer, Text, DateTime, Float, ForeignKey, JSON, Enum as SQLEnum, CheckConstraint, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -61,5 +61,6 @@ class RecipeRating(Base):
     recipe = relationship("Recipe", back_populates="ratings")
     
     __table_args__ = (
-        {"schema": None},
+        CheckConstraint('rating >= 1 AND rating <= 5', name='rating_range_check'),
+        UniqueConstraint('user_id', 'recipe_id', name='unique_user_recipe_rating'),
     ) 

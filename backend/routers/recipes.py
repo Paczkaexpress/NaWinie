@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from typing import Optional, List
 from uuid import UUID
+import time
 
 from ..database import get_db
 from ..models.requests import (
@@ -124,21 +125,31 @@ async def create_recipe(
     - **steps**: List of preparation steps
     - **ingredients**: List of required ingredients with amounts
     """
+    start_time = time.time()
+    
     try:
         logger.info(f"Creating new recipe: {recipe_data.name} by user {current_user.id}")
         
         result = await recipe_service.create_recipe(recipe_data, current_user.id)
         
+        # Log endpoint performance
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/ completed in {duration_ms} ms")
+        
         logger.info(f"Successfully created recipe with ID: {result.data.id}")
         return result
         
     except ValueError as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/ failed in {duration_ms} ms (400)")
         logger.error(f"Invalid recipe data: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/ failed in {duration_ms} ms (500)")
         logger.error(f"Error creating recipe: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -192,17 +203,24 @@ async def update_recipe(
     - **recipe_id**: UUID of the recipe to update
     - All fields are optional for partial updates
     """
+    start_time = time.time()
+    
     try:
         logger.info(f"Updating recipe {recipe_id} by user {current_user.id}")
         
         result = await recipe_service.update_recipe(recipe_id, recipe_data, current_user.id)
         
         if not result:
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info(f"PUT /api/recipes/{recipe_id} failed in {duration_ms} ms (404)")
             logger.warning(f"Recipe not found or access denied: {recipe_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Recipe not found or access denied"
             )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"PUT /api/recipes/{recipe_id} completed in {duration_ms} ms")
         
         logger.info(f"Successfully updated recipe: {recipe_id}")
         return result
@@ -210,12 +228,16 @@ async def update_recipe(
     except HTTPException:
         raise
     except ValueError as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"PUT /api/recipes/{recipe_id} failed in {duration_ms} ms (400)")
         logger.error(f"Invalid update data: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"PUT /api/recipes/{recipe_id} failed in {duration_ms} ms (500)")
         logger.error(f"Error updating recipe {recipe_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -269,17 +291,24 @@ async def rate_recipe(
     - **recipe_id**: UUID of the recipe to rate
     - **rating**: Rating value (1-5)
     """
+    start_time = time.time()
+    
     try:
         logger.info(f"Rating recipe {recipe_id} with {rating_data.rating} by user {current_user.id}")
         
         result = await recipe_service.rate_recipe(recipe_id, rating_data.rating, current_user.id)
         
         if not result:
+            duration_ms = (time.time() - start_time) * 1000
+            logger.info(f"POST /api/recipes/{recipe_id}/rate failed in {duration_ms} ms (404)")
             logger.warning(f"Recipe not found: {recipe_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Recipe not found"
             )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/{recipe_id}/rate completed in {duration_ms} ms")
         
         logger.info(f"Successfully rated recipe {recipe_id}")
         return result
@@ -287,12 +316,16 @@ async def rate_recipe(
     except HTTPException:
         raise
     except ValueError as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/{recipe_id}/rate failed in {duration_ms} ms (409)")
         logger.error(f"Rating conflict or invalid data: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e)
         )
     except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        logger.info(f"POST /api/recipes/{recipe_id}/rate failed in {duration_ms} ms (500)")
         logger.error(f"Error rating recipe {recipe_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

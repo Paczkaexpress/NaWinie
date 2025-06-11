@@ -492,7 +492,8 @@ class TestRecipeRatingEndpoint:
         assert response.status_code == 403
     
     def test_rate_recipe_invalid_rating(self, client: TestClient, db_session: Session, test_user: User, auth_headers: dict):
-        """Test rating with invalid values"""
+        """Test rating with invalid rating value"""
+        # Create test recipe
         recipe = Recipe(
             id=uuid.uuid4(),
             name="Test Recipe",
@@ -504,15 +505,42 @@ class TestRecipeRatingEndpoint:
         db_session.add(recipe)
         db_session.commit()
         
-        # Test rating too low
-        rating_data = {"rating": 0}
-        response = client.post(f"/api/recipes/{recipe.id}/rate", json=rating_data, headers=auth_headers)
-        assert response.status_code == 422
-        
-        # Test rating too high
+        # Test invalid rating (too high)
         rating_data = {"rating": 6}
         response = client.post(f"/api/recipes/{recipe.id}/rate", json=rating_data, headers=auth_headers)
-        assert response.status_code == 422 
+        assert response.status_code == 422  # Pydantic validation error
+        
+        # Test invalid rating (too low)
+        rating_data = {"rating": 0}
+        response = client.post(f"/api/recipes/{recipe.id}/rate", json=rating_data, headers=auth_headers)
+        assert response.status_code == 422  # Pydantic validation error
+
+    def test_rate_recipe_duplicate_rating(self, client: TestClient, db_session: Session, test_user: User, auth_headers: dict):
+        """Test that user cannot rate same recipe twice"""
+        # Create test recipe
+        recipe = Recipe(
+            id=uuid.uuid4(),
+            name="Test Recipe",
+            preparation_time_minutes=30,
+            complexity_level=ComplexityLevel.EASY,
+            steps=[{"step": 1, "description": "Step 1"}],
+            author_id=test_user.id
+        )
+        db_session.add(recipe)
+        db_session.commit()
+        
+        # First rating should succeed
+        rating_data = {"rating": 4}
+        response = client.post(f"/api/recipes/{recipe.id}/rate", json=rating_data, headers=auth_headers)
+        assert response.status_code == 200
+        assert response.json()["average_rating"] == 4.0
+        assert response.json()["total_votes"] == 1
+        
+        # Second rating should fail
+        rating_data = {"rating": 5}
+        response = client.post(f"/api/recipes/{recipe.id}/rate", json=rating_data, headers=auth_headers)
+        assert response.status_code == 409  # Conflict
+        assert "already rated" in response.json()["detail"]
 
 
 class TestRecipeFindByIngredientsEndpoint:
