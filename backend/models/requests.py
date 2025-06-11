@@ -22,5 +22,5 @@ class IngredientQueryParams(BaseModel):
     page: int = Field(default=1, ge=1, description="Numer strony")
     limit: int = Field(default=20, ge=1, le=100, description="Liczba elementów na stronę")
     search: Optional[str] = Field(default=None, max_length=100, description="Wyszukiwanie po nazwie")
-    sortBy: Optional[str] = Field(default="name", regex="^(name|unit_type|created_at)$")
-    sortOrder: Optional[str] = Field(default="asc", regex="^(asc|desc)$") 
+    sortBy: Optional[str] = Field(default="name", pattern="^(name|unit_type|created_at)$")
+    sortOrder: Optional[str] = Field(default="asc", pattern="^(asc|desc)$") 
