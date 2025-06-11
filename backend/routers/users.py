@@ -48,8 +48,7 @@ router = APIRouter()
 )
 async def get_current_user_profile(
     current_user_id: Annotated[str, Depends(get_current_user_id)],
-    db: Annotated[Session, Depends(get_db)],
-    user_service: Annotated[UserService, Depends(get_user_service)]
+    db: Annotated[Session, Depends(get_db)]
 ) -> UserResponse:
     """
     Pobiera profil aktualnie uwierzytelnionego użytkownika.
@@ -60,7 +59,6 @@ async def get_current_user_profile(
     Args:
         current_user_id: ID użytkownika wyodrębnione z JWT token
         db: Sesja bazy danych (dependency injection)
-        user_service: Serwis użytkowników (dependency injection)
         
     Returns:
         UserResponse: Profil użytkownika zawierający id, email, created_at, updated_at
@@ -71,6 +69,9 @@ async def get_current_user_profile(
         HTTPException 500: Błędy po stronie serwera
     """
     try:
+        # Utwórz serwis użytkowników
+        user_service = get_user_service(db)
+        
         # Pobierz profil użytkownika przez serwis
         user_profile = user_service.get_current_user(current_user_id)
         return user_profile
