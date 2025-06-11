@@ -70,7 +70,7 @@ app.include_router(users.router, prefix="/api/users", tags=["Users"])
 app.include_router(ingredients.router, prefix="/api/ingredients", tags=["Ingredients"])
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(user_default_ingredients.router, prefix="/api", tags=["User Default Ingredients"])
-app.include_router(recipes.router, prefix="/api/recipes", tags=["Recipes"])
+app.include_router(recipes.router, prefix="/api", tags=["Recipes"])
 # app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])  # To be implemented
 
 @app.get("/")

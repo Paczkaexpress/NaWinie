@@ -111,6 +111,7 @@ class RateLimitConfig:
         'user_defaults_get': (200, 60),      # 200 GET user defaults/minute
         'user_defaults_post': (20, 60),      # 20 POST user defaults/minute
         'user_defaults_delete': (50, 60),    # 50 DELETE user defaults/minute
+        'recipe_get': (200, 60),             # 200 GET recipe details/minute
         'general': (1000, 60),               # 1000 requests/minute overall
     }
     

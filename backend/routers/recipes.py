@@ -16,6 +16,7 @@ from ..services.recipe_service import RecipeService
 from ..dependencies.auth import get_current_user, get_current_user_optional
 from ..models.user import User
 from ..utils.logging_config import get_logger
+from ..utils.rate_limiter import rate_limit_dependency
 
 logger = get_logger(__name__)
 
@@ -337,8 +338,8 @@ async def find_recipes_by_ingredients(
             {
                 "ingredient_id": "123e4567-e89b-12d3-a456-426614174000",
                 "amount": 400.0,
-                "is_optional": false,
-                "substitute_recommendation": null
+                "is_optional": False,
+                "substitute_recommendation": None
             }
         ]
     }
@@ -369,8 +370,8 @@ async def find_recipes_by_ingredients(
                                     "name": "Spaghetti",
                                     "amount": 400.0,
                                     "unit": "grams",
-                                    "is_optional": false,
-                                    "substitute_recommendation": null
+                                    "is_optional": False,
+                                    "substitute_recommendation": None
                                 }
                             ]
                         }
@@ -492,8 +493,8 @@ async def create_recipe(
                     "name": "Spaghetti",
                     "amount": 400.0,
                     "unit": "grams",
-                    "is_optional": false,
-                    "substitute_recommendation": null
+                    "is_optional": False,
+                    "substitute_recommendation": None
                 }
             ]
         }
@@ -523,8 +524,8 @@ async def create_recipe(
                                     "name": "Spaghetti",
                                     "amount": 400.0,
                                     "unit": "grams", 
-                                    "is_optional": false,
-                                    "substitute_recommendation": null
+                                    "is_optional": False,
+                                    "substitute_recommendation": None
                                 }
                             ]
                         }
@@ -561,7 +562,8 @@ async def create_recipe(
 )
 async def get_recipe_by_id(
     recipe_id: UUID,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _rate_limit: None = Depends(rate_limit_dependency("recipe_get"))
 ):
     """Get detailed information about a specific recipe"""
     try:
