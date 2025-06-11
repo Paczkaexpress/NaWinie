@@ -17,7 +17,8 @@ backend/tests/
 ### Prerequisites
 ```bash
 # Activate virtual environment
-venv\Scripts\activate
+venv\Scripts\activate   # Windows
+# source venv/bin/activate  # Linux/Mac
 
 # Install dependencies (if needed)
 pip install -r requirements.txt
@@ -25,14 +26,20 @@ pip install -r requirements.txt
 
 ### Run Tests
 ```bash
-# Run all tests
-$env:PYTHONPATH = "."; pytest
+# Run all tests (from project root directory)
+python -m pytest backend/tests/
 
 # Run with verbose output
-$env:PYTHONPATH = "."; pytest -v
+python -m pytest backend/tests/ -v
 
 # Run specific test file
-$env:PYTHONPATH = "."; pytest backend/tests/test_auth.py
+python -m pytest backend/tests/test_auth.py -v
+
+# Run specific test class
+python -m pytest backend/tests/test_auth.py::TestJWTHelper -v
+
+# Run tests matching pattern
+python -m pytest backend/tests/ -k "test_auth" -v
 ```
 
 ## Test Categories
@@ -45,10 +52,11 @@ $env:PYTHONPATH = "."; pytest backend/tests/test_auth.py
 
 🎯 **Quick Commands:**
 ```bash
-$env:PYTHONPATH = "."; pytest                    # All tests
-$env:PYTHONPATH = "."; pytest -v                 # Verbose
-$env:PYTHONPATH = "."; pytest -k "test_auth"     # Auth tests only
-$env:PYTHONPATH = "."; pytest --tb=short         # Short traceback
+python -m pytest backend/tests/                    # All tests
+python -m pytest backend/tests/ -v                 # Verbose
+python -m pytest backend/tests/ -k "test_auth"     # Auth tests only
+python -m pytest backend/tests/ --tb=short         # Short traceback
+python -m pytest backend/tests/ -x                 # Stop on first failure
 ```
 
 ## Test Coverage
@@ -61,19 +69,20 @@ If you have `pytest-cov` installed:
 pip install pytest-cov
 
 # Run tests with coverage report
-$env:PYTHONPATH = "."; pytest --cov=backend
+python -m pytest backend/tests/ --cov=backend
 
 # Generate HTML coverage report
-$env:PYTHONPATH = "."; pytest --cov=backend --cov-report=html
+python -m pytest backend/tests/ --cov=backend --cov-report=html
 
 # Coverage with missing lines
-$env:PYTHONPATH = "."; pytest --cov=backend --cov-report=term-missing
+python -m pytest backend/tests/ --cov=backend --cov-report=term-missing
 ```
 
 ## Test Breakdown:
 - **Authentication**: 9 tests
 - **User Service**: 11 tests  
 - **API Endpoint**: 15 tests
+- **Total**: 35 tests ✅
 
 ## Configuration
 
@@ -91,8 +100,16 @@ For automated testing in CI/CD pipelines:
 # GitHub Actions example
 - name: Run tests
   run: |
-    export PYTHONPATH=.
-    pytest backend/tests/ --tb=short -v
+    python -m pytest backend/tests/ --tb=short -v
+```
+
+```bash
+# Local development script
+#!/bin/bash
+# test.sh
+source venv/bin/activate  # Linux/Mac
+# venv\Scripts\activate   # Windows
+python -m pytest backend/tests/ -v
 ```
 
 ## Adding New Tests
@@ -115,6 +132,19 @@ def test_new_functionality_success(self, client, test_user, auth_headers):
     assert response.status_code == 200
     data = response.json()
     assert "expected_field" in data
+```
+
+## Running Tests from Different Directories
+
+**Important**: Always run tests from the project root directory:
+
+```bash
+# ✅ Correct - from project root
+D:\training\10x_training\NaWinie> python -m pytest backend/tests/ -v
+
+# ❌ Incorrect - from backend directory  
+D:\training\10x_training\NaWinie\backend> pytest -v
+# Error: ModuleNotFoundError: No module named 'backend'
 ```
 
 ---
