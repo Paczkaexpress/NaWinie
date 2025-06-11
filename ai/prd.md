@@ -71,7 +71,7 @@ Użytkownicy napotykają trudności z wykorzystaniem składników, które zalega
 
 - ID: US-003  
   Tytuł: Dodawanie nowego przepisu (Recipe Contributor)  
-  Opis: Jako użytkownik chcę móc dodać nowy przepis do bazy, aby inni użytkownicy mogli korzystać z nowych inspiracji kulinarnych.  
+  Opis: Jako zalogowany użytkownik chcę móc dodać nowy przepis do bazy, aby inni użytkownicy mogli korzystać z nowych inspiracji kulinarnych.  
   Kryteria akceptacji:
   - Formularz dodawania przepisu zawiera pola na nazwę, listę składników, opis i stopień trudności.
   - Po wysłaniu formularza przepis pojawia się w bazie i jest widoczny na liście propozycji.
@@ -108,5 +108,4 @@ Użytkownicy napotykają trudności z wykorzystaniem składników, które zalega
    - Poprawność dopasowania przepisów do wprowadzonych składników.
    - Działanie funkcji filtrowania i sortowania przepisów.
    - Bezpieczną rejestrację, logowanie oraz autoryzację użytkowników.
-4. Użytkownicy raportują intuicyjność interfejsu i wygodę korzystania z aplikacji.
-5. Ustalenie progów KPI dotyczących liczby kliknięć na przepisy (do dalszej weryfikacji) jako dodatkowego wskaźnika sukcesu.
+4. Ustalenie progów KPI dotyczących liczby kliknięć na przepisy (do dalszej weryfikacji) jako dodatkowego wskaźnika sukcesu.
