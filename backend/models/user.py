@@ -15,4 +15,5 @@ class User(Base):
     
     # Relationships (commented out until models are implemented)
     # recipes = relationship("Recipe", back_populates="author")
-    # ratings = relationship("Rating", back_populates="user") 
+    # ratings = relationship("Rating", back_populates="user")
+    default_ingredients = relationship("UserDefaultIngredient", back_populates="user") 
