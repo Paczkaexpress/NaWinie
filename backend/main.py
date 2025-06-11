@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routers import auth, recipes, ingredients
 from .database import engine, Base
+from .models import User, Recipe, RecipeIngredient, Ingredient, Rating
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
