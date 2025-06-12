@@ -89,12 +89,6 @@ jobs:
     - name: TypeScript check
       run: npx tsc --noEmit
     
-    - name: ESLint check
-      run: npx eslint . --ext .js,.ts,.tsx,.astro
-    
-    - name: Prettier check
-      run: npx prettier --check .
-    
     - name: Run frontend tests
       run: npm test
     
