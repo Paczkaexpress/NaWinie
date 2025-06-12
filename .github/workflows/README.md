@@ -40,12 +40,7 @@ This repository includes a comprehensive GitHub Actions CI/CD pipeline that ensu
 - Sets up PostgreSQL service for database tests
 - Placeholder for integration test commands
 
-#### 5. Performance Tests (`performance-tests`)
-- Optional job that runs only when full suite is requested
-- Uses pytest-benchmark for performance testing
-- Placeholder for performance test commands
-
-#### 6. CI Summary (`ci-summary`)
+#### 5. CI Summary (`ci-summary`)
 - Aggregates results from all critical jobs
 - Provides clear pass/fail status
 - Fails the workflow if critical tests fail
