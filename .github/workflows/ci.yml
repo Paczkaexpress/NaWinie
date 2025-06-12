@@ -1,0 +1,173 @@
+name: CI Pipeline
+
+# Trigger the workflow on:
+# 1. Manual dispatch (can be run manually from GitHub Actions tab)
+# 2. Pull requests to main branch
+# 3. Push to main branch (optional, for continuous integration)
+on:
+  workflow_dispatch:
+    inputs:
+      run_full_suite:
+        description: 'Run full test suite including slower tests'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+# Set permissions for the workflow
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  # Job 1: Python Backend Testing
+  python-tests:
+    name: Python Backend Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov pytest-xdist flake8 black isort mypy
+    
+    - name: Linting (flake8)
+      run: flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+
+    - name: Run pytest with coverage
+      run: |
+        pytest --cov=. --cov-report=xml --cov-report=html --cov-report=term-missing -v
+      env:
+        # Add any environment variables your tests need
+        PYTHONPATH: .
+        TESTING: true
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: python
+        name: python-coverage
+        fail_ci_if_error: false
+
+  # Job 2: Security and Dependency Checks
+  security-checks:
+    name: Security & Dependency Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+    
+    - name: Python dependency security check
+      run: safety check --json || true  # Continue on vulnerabilities for now
+    
+    - name: Python security linting
+      run: bandit -r . -f json || true  # Continue on security issues for now
+    
+    - name: Setup Node.js for security checks
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+    
+    - name: Install npm dependencies
+      run: npm install
+    
+    - name: npm audit
+      run: npm audit --audit-level moderate || true  # Continue on vulnerabilities for now
+
+  # Job 3: Integration Tests (if you have them)
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [python-tests]
+    if: github.event.inputs.run_full_suite == 'true' || github.event_name == 'push'
+    
+    services:
+      # Add database service if needed
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run integration tests
+      run: |
+        # Add integration test commands here
+        # pytest backend/tests/integration/ -v
+        echo "Integration tests would run here"
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost/test_db
+        TESTING: true
+
+
+# Summary job that requires all critical jobs to pass
+  ci-summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [python-tests, security-checks]
+    if: always()
+    
+    steps:
+    - name: Check all jobs status
+      run: |
+        echo "Python tests: ${{ needs.python-tests.result }}"
+        echo "Security checks: ${{ needs.security-checks.result }}"
+        
+        if [[ "${{ needs.python-tests.result }}" == "failure" ]]; then
+          echo "Critical tests failed!"
+          exit 1
+        fi
+        
+        echo "All critical tests passed!" 
