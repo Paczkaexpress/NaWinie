@@ -35,13 +35,21 @@ interface UseUrlIngredientsReturn {
  * Hook that keeps selected ingredients in sync with the `ingredients` URL query param.
  */
 const useUrlIngredients = (): UseUrlIngredientsReturn => {
-  const [ingredients, setIngredients] = useState<IngredientDto[]>(() => {
-    const ids = parseIngredientIds(window.location.search);
-    return ids.map(toPlaceholderIngredient);
-  });
+  const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
+
+  // Initialize ingredients from URL on client side only
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const ids = parseIngredientIds(window.location.search);
+      const initialIngredients = ids.map(toPlaceholderIngredient);
+      setIngredients(initialIngredients);
+    }
+  }, []);
 
   /* Sync state → URL */
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const ids = ingredients.map((i) => i.id);
     const params = new URLSearchParams(window.location.search);
     if (ids.length > 0) {

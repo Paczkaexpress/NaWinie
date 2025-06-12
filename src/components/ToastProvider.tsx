@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import * as React from "react";
+const { createContext, useContext, useState, useCallback, useEffect } = React;
 
 export type ToastType = "info" | "error" | "success";
 
@@ -14,9 +15,24 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined);
 
+// Helper function to generate IDs that works in both client and server environments
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for server-side rendering
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
 export const useToast = (): ToastContextValue => {
   const ctx = useContext(ToastContext);
   if (!ctx) {
+    // During SSR, provide a no-op fallback instead of throwing
+    if (typeof window === 'undefined') {
+      return {
+        addToast: () => {}, // No-op during SSR
+      };
+    }
     throw new Error("useToast must be used within a ToastProvider");
   }
   return ctx;
@@ -26,7 +42,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = useCallback((message: string, type: ToastType = "info") => {
-    setToasts((prev) => [...prev, { id: crypto.randomUUID(), message, type }]);
+    setToasts((prev) => [...prev, { id: generateId(), message, type }]);
   }, []);
 
   const removeToast = useCallback((id: string) => {
@@ -63,4 +79,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       </div>
     </ToastContext.Provider>
   );
-}; 
+};
+
+// Default export for Layout.astro compatibility
+export default ToastProvider; 
