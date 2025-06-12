@@ -30,6 +30,7 @@ class Recipe(Base):
     author = relationship("User", back_populates="recipes")
     ingredients = relationship("RecipeIngredient", back_populates="recipe", cascade="all, delete-orphan")
     ratings = relationship("RecipeRating", back_populates="recipe", cascade="all, delete-orphan")
+    recipe_views = relationship("RecipeView", back_populates="recipe")
 
 class RecipeIngredient(Base):
     __tablename__ = "recipe_ingredients"

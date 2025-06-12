@@ -6,8 +6,7 @@ from pydantic import ValidationError
 
 from .routers import users, ingredients, monitoring, user_default_ingredients, recipes  # Import implemented routers
 from .database import engine, Base
-from .models import User, Ingredient, UserDefaultIngredient  # Import implemented models
-from .models.recipe import Recipe, RecipeIngredient, RecipeRating  # Import recipe models
+from .models import User, Ingredient, UserDefaultIngredient, Recipe, RecipeIngredient, RecipeRating, RecipeView  # Import implemented models
 
 from .utils.logging_config import setup_logging, get_logger
 from .utils.monitoring import TimingMiddleware
