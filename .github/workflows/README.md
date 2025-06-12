@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository includes a comprehensive GitHub Actions CI/CD pipeline that ensures code quality, security, and functionality across both the Python backend and Node.js frontend components.
+This repository includes a comprehensive GitHub Actions CI/CD pipeline that ensures code quality, security, and functionality for the Python backend components.
 
 ## Workflow Structure
 
@@ -14,33 +14,23 @@ This repository includes a comprehensive GitHub Actions CI/CD pipeline that ensu
 ### Jobs
 
 #### 1. Python Backend Tests (`python-tests`)
-- **Matrix Strategy**: Tests against Python 3.9, 3.10, and 3.11
+- **Matrix Strategy**: Tests against Python 3.10
 - **Code Quality Checks**:
-  - Code formatting with `black`
-  - Import sorting with `isort`
   - Linting with `flake8`
-  - Type checking with `mypy`
 - **Testing**: Runs pytest with coverage reporting
 - **Coverage**: Uploads coverage reports to Codecov
 
-#### 2. Frontend Tests (`frontend-tests`)
-- TypeScript compilation check
-- ESLint linting
-- Prettier formatting check
-- Vitest unit tests
-- Build verification
-
-#### 3. Security Checks (`security-checks`)
+#### 2. Security Checks (`security-checks`)
 - Python dependency vulnerability scanning with `safety`
 - Python security linting with `bandit`
 - npm audit for Node.js dependencies
 
-#### 4. Integration Tests (`integration-tests`)
+#### 3. Integration Tests (`integration-tests`)
 - Runs only on full suite or main branch pushes
 - Sets up PostgreSQL service for database tests
 - Placeholder for integration test commands
 
-#### 5. CI Summary (`ci-summary`)
+#### 4. CI Summary (`ci-summary`)
 - Aggregates results from all critical jobs
 - Provides clear pass/fail status
 - Fails the workflow if critical tests fail
@@ -62,23 +52,14 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 pip install pytest-cov pytest-xdist flake8 black isort mypy safety bandit
 
-# Node.js setup
-npm install
-
 # Run tests locally
 pytest --cov=. --cov-report=term-missing -v
-npm test
 ```
 
 ### Code Quality Standards
 
 The CI enforces these standards:
-- **Black**: Code formatting
-- **isort**: Import organization
-- **flake8**: Linting
-- **mypy**: Type checking
-- **ESLint**: JavaScript/TypeScript linting
-- **Prettier**: Frontend code formatting
+- **flake8**: Python linting
 
 ## Customization
 
@@ -141,7 +122,7 @@ services:
 ### 4. Deployment
 ```yaml
 deploy:
-  needs: [python-tests, frontend-tests, security-checks]
+  needs: [python-tests, security-checks]
   if: github.ref == 'refs/heads/main'
   runs-on: ubuntu-latest
   steps:
