@@ -10,6 +10,8 @@
       "@/layouts/*": ["src/layouts/*"],
       "@/lib/*": ["src/lib/*"],
       "@/utils/*": ["src/utils/*"]
-    }
+    },
+    "lib": ["DOM", "ES2015", "DOM.Iterable"],
+    "skipLibCheck": true
   }
 } 
