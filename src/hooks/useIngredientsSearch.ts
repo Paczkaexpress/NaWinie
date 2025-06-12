@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import type { IngredientDto } from "../types";
 import { searchIngredients } from "../lib/api";
-import { useToast } from "../components/ToastProvider";
 
 interface UseIngredientsSearchResult {
   suggestions: IngredientDto[];
@@ -15,8 +14,6 @@ const useIngredientsSearch = (query: string): UseIngredientsSearchResult => {
   const [suggestions, setSuggestions] = useState<IngredientDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-
-  const { addToast } = useToast();
 
   useEffect(() => {
     if (query.length < 2) {
@@ -34,7 +31,7 @@ const useIngredientsSearch = (query: string): UseIngredientsSearchResult => {
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
           setError(err as Error);
-          addToast("Błąd podczas wyszukiwania składników", "error");
+          console.error("Error searching ingredients:", err);
         }
       } finally {
         setIsLoading(false);

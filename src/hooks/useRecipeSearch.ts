@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RecipeListItemDto, PaginatedRecipesDto } from "../types";
 import { findRecipesByIngredients } from "../lib/api";
-import { useToast } from "../components/ToastProvider";
 
 interface UseRecipeSearchResult {
   recipes: RecipeListItemDto[];
@@ -21,25 +20,32 @@ const useRecipeSearch = (ingredientIds: string[]): UseRecipeSearchResult => {
   const [hasMore, setHasMore] = useState(false);
   const prevIngredientIdsRef = useRef<string[]>(ingredientIds);
 
-  const { addToast } = useToast();
-
   /* Reset when ingredientIds change */
   useEffect(() => {
     if (prevIngredientIdsRef.current.join() !== ingredientIds.join()) {
       setRecipes([]);
       setPage(1);
+      setError(null);
     }
     prevIngredientIdsRef.current = ingredientIds;
   }, [ingredientIds]);
 
-  /* Load first page on page or ingredientIds change */
+  /* Load first page on page or ingredientIds change - but only if we have ingredients */
   useEffect(() => {
-    loadMore();
+    if (ingredientIds.length > 0) {
+      loadMore();
+    } else {
+      // Clear recipes when no ingredients selected
+      setRecipes([]);
+      setHasMore(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ingredientIds]);
 
   const loadMore = useCallback(async () => {
-    if (isLoading) return;
+    // Don't make API calls if no ingredients selected
+    if (ingredientIds.length === 0 || isLoading) return;
+    
     setIsLoading(true);
     setError(null);
     try {
@@ -53,7 +59,7 @@ const useRecipeSearch = (ingredientIds: string[]): UseRecipeSearchResult => {
       setPage((p) => p + 1);
     } catch (err) {
       setError(err as Error);
-      addToast("Błąd podczas ładowania przepisów", "error");
+      console.error("Error loading recipes:", err);
     } finally {
       setIsLoading(false);
     }
