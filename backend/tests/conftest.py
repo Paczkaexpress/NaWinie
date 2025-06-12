@@ -9,6 +9,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 import uuid
 import time
+import subprocess
+import threading
+import requests
+import sys
+import os
 from datetime import datetime
 
 from backend.main import app
@@ -27,6 +32,49 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@pytest.fixture(scope="session")
+def server_process():
+    """Start the uvicorn server for integration tests and stop it after tests."""
+    # Check if server is already running
+    try:
+        response = requests.get("http://localhost:8000/", timeout=2)
+        if response.status_code == 200:
+            print("Server already running, using existing instance")
+            yield None
+            return
+    except requests.exceptions.ConnectionError:
+        pass
+    
+    # Start the server
+    print("Starting uvicorn server for integration tests...")
+    process = subprocess.Popen([
+        sys.executable, "-m", "uvicorn", 
+        "backend.main:app", 
+        "--host", "127.0.0.1", 
+        "--port", "8000",
+        "--reload"
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    
+    # Wait for server to start
+    for _ in range(30):  # Wait up to 30 seconds
+        try:
+            response = requests.get("http://localhost:8000/", timeout=1)
+            if response.status_code == 200:
+                print("Server started successfully")
+                break
+        except requests.exceptions.ConnectionError:
+            time.sleep(1)
+    else:
+        process.terminate()
+        pytest.fail("Server failed to start within 30 seconds")
+    
+    yield process
+    
+    # Cleanup
+    print("Stopping server...")
+    process.terminate()
+    process.wait(timeout=10)
 
 @pytest.fixture(scope="function")
 def db_session():

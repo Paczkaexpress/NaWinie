@@ -102,3 +102,16 @@ class UpdateRecipeRequest(BaseModel):
 
 class RateRecipeRequest(BaseModel):
     rating: int = Field(..., ge=1, le=5) 
+
+class RecipeViewHistoryQuery(BaseModel):
+    """Model parametrów zapytania dla historii przeglądania przepisów."""
+    page: int = Field(default=1, ge=1, description="Numer strony")
+    limit: int = Field(default=10, ge=1, le=100, description="Liczba elementów na stronę")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "page": 1,
+                "limit": 10
+            }
+        } 
