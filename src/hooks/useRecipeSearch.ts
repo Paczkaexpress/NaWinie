@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { RecipeListItemDto, PaginatedRecipesDto } from "../types";
-import { findRecipesByIngredients } from "../lib/api";
+import type { RecipeListItemDto, PaginatedRecipesDto } from "@/types";
+import { findRecipesByIngredients } from "@/lib/api";
 
 interface UseRecipeSearchResult {
   recipes: RecipeListItemDto[];

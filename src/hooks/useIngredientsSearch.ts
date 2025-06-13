@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import type { IngredientDto } from "../types";
-import { searchIngredients } from "../lib/api";
+import type { IngredientDto } from "@/types";
+import { searchIngredients } from "@/lib/api";
 
 interface UseIngredientsSearchResult {
   suggestions: IngredientDto[];
