@@ -8,18 +8,21 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "vitest",
+    "test": "vitest --config vitest.config.ts",
     "astro": "astro"
   },
   "dependencies": {
     "@astrojs/react": "^3.0.10",
     "@astrojs/tailwind": "^5.1.0",
+    "@radix-ui/react-popover": "^1.0.6",
+    "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.0.2",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "astro": "^4.4.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "cmdk": "^1.1.1",
     "lucide-react": "^0.330.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -28,12 +31,20 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/user-event": "^14.4.3",
+    "@types/node": "^24.0.1",
     "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "^4.0.0",
     "eslint": "^8.56.0",
     "eslint-plugin-astro": "^0.31.4",
+    "jsdom": "^26.1.0",
+    "msw": "^2.3.1",
     "prettier": "^3.2.5",
     "prettier-plugin-astro": "^0.13.0",
     "typescript": "^5.3.3",
+    "vite-tsconfig-paths": "^4.3.2",
     "vitest": "^1.2.2"
   }
-} 
+}
