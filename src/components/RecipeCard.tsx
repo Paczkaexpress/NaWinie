@@ -25,13 +25,21 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
     >
       {/* Image Section */}
       <div className="relative aspect-video bg-gradient-to-br from-orange-100 to-yellow-100 overflow-hidden">
-        {/* Placeholder content */}
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-          <div className="text-center text-muted-foreground">
-            <ChefHat className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm font-medium">Zdjęcie przepisu</p>
+        {recipe.image_data ? (
+          <img
+            src={recipe.image_data}
+            alt={recipe.name}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          /* Placeholder content */
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+            <div className="text-center text-muted-foreground">
+              <ChefHat className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm font-medium">Zdjęcie przepisu</p>
+            </div>
           </div>
-        </div>
+        )}
         
         {/* Play button overlay */}
         <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">

@@ -21,6 +21,7 @@ class Recipe(Base):
     complexity_level = Column(SQLEnum(ComplexityLevel), nullable=False)
     steps = Column(JSON, nullable=False)  # Store as JSON array
     author_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    image_data = Column(Text, nullable=True)  # Base64 encoded image data
     average_rating = Column(Float, default=0.0)
     total_votes = Column(Integer, default=0)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -99,6 +99,7 @@ class RecipeListItemDto(BaseModel):
     preparation_time_minutes: int
     complexity_level: ComplexityLevel
     author_id: UUID
+    image_data: Optional[str] = None  # Base64 encoded image data
     average_rating: float
     total_votes: int
     created_at: datetime
@@ -112,6 +113,7 @@ class RecipeDetailDto(BaseModel):
     complexity_level: ComplexityLevel
     steps: List[RecipeStepModel]
     author_id: UUID
+    image_data: Optional[str] = None  # Base64 encoded image data
     average_rating: float
     total_votes: int
     created_at: datetime
