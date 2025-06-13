@@ -60,11 +60,15 @@ export async function findRecipesByIngredients(
   return fetchWithRetry<PaginatedRecipesDto>(url, options);
 }
 
-export async function getRecipes(
-  page = 1,
-  limit = 10,
-  options?: FetchOptions
-): Promise<PaginatedRecipesDto> {
-  const url = `${API_BASE_URL}/recipes?page=${page}&limit=${limit}&sortBy=rating&sortOrder=desc`;
-  return fetchWithRetry<PaginatedRecipesDto>(url, options);
-} 
+import { supabase } from '@/lib/supabaseClient'
+
+export async function getRecipes(page = 1, limit = 10) {
+  const { data, error } = await supabase
+    .from('recipes')
+    .select('*')
+    .order('average_rating', { ascending: false })
+    .range((page - 1) * limit, page * limit - 1)
+
+  if (error) throw error
+  return data
+}

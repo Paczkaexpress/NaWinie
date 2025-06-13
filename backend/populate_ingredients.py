@@ -597,6 +597,14 @@ SAMPLE_INGREDIENTS = [
     ("Kawa arabika", "G"),
     ("Kawa robusta", "G"),
     ("Espresso (skondensowane)", "ML"),
+    
+    # Missing ingredients from recipes
+    ("Drożdże instant", "G"),
+    ("Koncentrat pomidorowy", "G"),
+    ("Mięta świeża", "G"),
+    ("Proszek do pieczenia", "G"),
+    ("Płatki chili", "G"),
+    ("Rozmaryn suszony", "G"),
 ]
 
 def populate_ingredients():
