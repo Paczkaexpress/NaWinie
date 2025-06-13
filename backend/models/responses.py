@@ -130,4 +130,14 @@ class RecipeDetailResponse(BaseModel):
 class RatingUpdateResponse(BaseModel):
     """DTO representing the updated rating status of a recipe after a vote."""
     average_rating: float
-    total_votes: int 
+    total_votes: int
+
+class AuthResponse(BaseModel):
+    """Response model for authentication (login/register)"""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    user: UserResponse = Field(..., description="User profile information")
+
+class MessageResponse(BaseModel):
+    """Generic response model for simple messages"""
+    message: str = Field(..., description="Response message") 

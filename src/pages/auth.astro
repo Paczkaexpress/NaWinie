@@ -1,0 +1,21 @@
+---
+import Layout from '../layouts/Layout.astro';
+import AuthView from '../components/AuthView';
+---
+
+<Layout title="Na Winie - Logowanie">
+	<!-- Header Section -->
+	<header class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg">
+		<div class="container mx-auto px-4 py-6">
+			<h1 class="text-4xl font-bold">Na Winie - Grab & Cook</h1>
+			<p class="text-lg mt-2 opacity-90">Zaloguj się lub zarejestruj</p>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="min-h-screen bg-gray-50 py-12">
+		<div class="container mx-auto px-4">
+			<AuthView client:load />
+		</div>
+	</main>
+</Layout> 
