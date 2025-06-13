@@ -5,9 +5,11 @@ import { http, HttpResponse } from "msw";
 import * as matchers from "@testing-library/jest-dom/matchers";
 expect.extend(matchers);
 
+const API_BASE_URL = "http://localhost:8000/api";
+
 // Mock API handlers
 const handlers = [
-  http.get("/ingredients", ({ request }) => {
+  http.get(`${API_BASE_URL}/ingredients`, ({ request }) => {
     const url = new URL(request.url);
     const search = url.searchParams.get("search") ?? "";
     const page = Number(url.searchParams.get("page") ?? 1);
@@ -16,7 +18,7 @@ const handlers = [
       pagination: { page, limit: 10, total_items: 1, total_pages: 1 },
     });
   }),
-  http.get("/recipes/find-by-ingredients", () => {
+  http.get(`${API_BASE_URL}/recipes/find-by-ingredients`, () => {
     return HttpResponse.json({
       data: [
         {
@@ -32,7 +34,7 @@ const handlers = [
       pagination: { page: 1, limit: 10, total_items: 1, total_pages: 1 },
     });
   }),
-  http.get("/recipes", () => {
+  http.get(`${API_BASE_URL}/recipes`, () => {
     return HttpResponse.json({
       data: [
         {

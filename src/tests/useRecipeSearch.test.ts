@@ -10,6 +10,8 @@ vi.useFakeTimers();
 import { server } from "./setup";
 import { http, HttpResponse } from "msw";
 
+const API_BASE_URL = "http://localhost:8000/api";
+
 describe("useRecipeSearch", () => {
   it("fetches first page and loadMore continues pagination", async () => {
     const mockResponsePage1 = {
@@ -23,7 +25,7 @@ describe("useRecipeSearch", () => {
     };
 
     server.use(
-      http.get("/recipes/find-by-ingredients", ({ request }) => {
+      http.get(`${API_BASE_URL}/recipes/find-by-ingredients`, ({ request }) => {
         const url = new URL(request.url);
         const page = Number(url.searchParams.get("page"));
         return HttpResponse.json(page === 1 ? mockResponsePage1 : mockResponsePage2);
@@ -32,7 +34,7 @@ describe("useRecipeSearch", () => {
 
     const wrapper = ({ children }: { children: any }) => React.createElement(ToastProvider, null, children);
 
-    const { result } = renderHook(() => useRecipeSearch([]), { wrapper });
+    const { result } = renderHook(() => useRecipeSearch(["ing1"]), { wrapper });
 
     // run timers for initial fetch debounce none but we call immediate fetch inside hook loadMore after effect; await next tick
     await act(async () => {

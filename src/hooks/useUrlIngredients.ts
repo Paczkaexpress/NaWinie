@@ -39,6 +39,13 @@ interface UseUrlIngredientsReturn {
 const useUrlIngredients = (): UseUrlIngredientsReturn => {
   const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
 
+  /* Sync URL → state on startup */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const initialIds = parseIngredientIds(window.location.search);
+    setIngredients(initialIds.map(toPlaceholderIngredient));
+  }, []);
+
   /* Sync state → URL */
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -51,6 +58,11 @@ const useUrlIngredients = (): UseUrlIngredientsReturn => {
       params.delete(QUERY_KEY);
     }
     const newUrl = `${window.location.pathname}?${params.toString()}`;
+    // prevent empty "?" in URL
+    if (newUrl.endsWith("?")) {
+      window.history.replaceState(null, "", newUrl.slice(0, -1));
+      return;
+    }
     window.history.replaceState(null, "", newUrl);
   }, [ingredients]);
 
