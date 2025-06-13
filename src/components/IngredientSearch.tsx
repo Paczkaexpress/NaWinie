@@ -27,6 +27,7 @@ const IngredientSearch: React.FC<IngredientSearchProps> = ({ onSelect, disabled 
       placeholder="Szukaj składników..."
       disabled={disabled}
       isLoading={isLoading}
+      onInputChange={setInput}
       onSelect={(opt) => {
         const ing = suggestions.find((i) => i.id === opt.value);
         if (ing) {

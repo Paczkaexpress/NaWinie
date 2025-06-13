@@ -15,9 +15,10 @@ interface ComboboxProps {
   disabled?: boolean;
   isLoading?: boolean;
   onSelect: (option: ComboboxOption) => void;
+  onInputChange?: (value: string) => void;
 }
 
-const Combobox: React.FC<ComboboxProps> = ({ options, placeholder = "Wybierz...", disabled, isLoading, onSelect }) => {
+const Combobox: React.FC<ComboboxProps> = ({ options, placeholder = "Wybierz...", disabled, isLoading, onSelect, onInputChange }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
 
@@ -47,7 +48,11 @@ const Combobox: React.FC<ComboboxProps> = ({ options, placeholder = "Wybierz..."
       </Popover.Trigger>
       <Popover.Content className="z-20 w-[var(--radix-popover-trigger-width)] p-0 bg-white border rounded shadow" align="start">
         <Command loop>
-          <Command.Input placeholder="Szukaj..." className="w-full border-b px-3 py-2 outline-none" />
+          <Command.Input 
+            placeholder="Szukaj..." 
+            className="w-full border-b px-3 py-2 outline-none" 
+            onValueChange={onInputChange}
+          />
           <Command.List className="max-h-60 overflow-auto">
             {options.length === 0 && <Command.Empty className="p-3 text-sm text-gray-500">Brak wyników.</Command.Empty>}
             {options.map((opt) => (

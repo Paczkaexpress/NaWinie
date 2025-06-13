@@ -32,6 +32,24 @@ const handlers = [
       pagination: { page: 1, limit: 10, total_items: 1, total_pages: 1 },
     });
   }),
+  http.get("/recipes", () => {
+    return HttpResponse.json({
+      data: [
+        {
+          id: "default-recipe-1",
+          name: "Default Mock Recipe",
+          average_rating: 4.8,
+          preparation_time_minutes: 25,
+          complexity_level: "medium",
+          created_at: "",
+          updated_at: "",
+          author_id: "author-1",
+          total_votes: 20,
+        },
+      ],
+      pagination: { page: 1, limit: 12, total_items: 1, total_pages: 1 },
+    });
+  }),
 ];
 
 export const server = setupServer(...handlers);

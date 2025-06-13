@@ -33,18 +33,11 @@ interface UseUrlIngredientsReturn {
 
 /**
  * Hook that keeps selected ingredients in sync with the `ingredients` URL query param.
+ * Note: We don't load ingredients from URL on startup to avoid placeholder ingredient issues.
+ * Users need to search and select ingredients through the proper interface.
  */
 const useUrlIngredients = (): UseUrlIngredientsReturn => {
   const [ingredients, setIngredients] = useState<IngredientDto[]>([]);
-
-  // Initialize ingredients from URL on client side only
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const ids = parseIngredientIds(window.location.search);
-      const initialIngredients = ids.map(toPlaceholderIngredient);
-      setIngredients(initialIngredients);
-    }
-  }, []);
 
   /* Sync state → URL */
   useEffect(() => {

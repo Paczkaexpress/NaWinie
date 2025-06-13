@@ -42,14 +42,14 @@ const RecipeGrid: React.FC<RecipeGridProps> = ({ recipes, isLoading, hasMore, lo
         <p className="text-center text-gray-500 py-8">Brak przepisów spełniających kryteria.</p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
         {recipes.map((recipe) => (
           <RecipeCard key={recipe.id} recipe={recipe} />
         ))}
 
         {/* Show skeletons during initial loading */}
         {isLoading && recipes.length === 0 &&
-          Array.from({ length: 8 }).map((_, idx) => <SkeletonCard key={idx} />)}
+          Array.from({ length: 6 }).map((_, idx) => <SkeletonCard key={idx} />)}
       </div>
 
       {/* Loading / sentinel */}
