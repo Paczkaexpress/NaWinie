@@ -105,7 +105,25 @@ jobs:
     - name: npm audit
       run: npm audit --audit-level moderate || true  # Continue on vulnerabilities for now
 
-  # Job 3: Integration Tests (if you have them)
+  # Job 3: Frontend Tests
+  frontend-tests:
+    name: Frontend Tests (Vitest)
+    runs-on: ubuntu-latest
+    needs: [python-tests]
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+    - name: Install npm dependencies
+      run: npm install
+    - name: Run Vitest
+      run: npm test
+
+  # Job 4: Integration Tests (if you have them)
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
@@ -156,7 +174,7 @@ jobs:
   ci-summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [python-tests, security-checks]
+    needs: [python-tests, security-checks, frontend-tests]
     if: always()
     
     steps:
@@ -164,8 +182,9 @@ jobs:
       run: |
         echo "Python tests: ${{ needs.python-tests.result }}"
         echo "Security checks: ${{ needs.security-checks.result }}"
+        echo "Frontend tests: ${{ needs.frontend-tests.result }}"
         
-        if [[ "${{ needs.python-tests.result }}" == "failure" ]]; then
+        if [[ "${{ needs.python-tests.result }}" == "failure" || "${{ needs.frontend-tests.result }}" == "failure" ]]; then
           echo "Critical tests failed!"
           exit 1
         fi
