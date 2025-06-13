@@ -55,10 +55,11 @@ You can customize the email templates for:
 - Reset password
 - Magic link
 
-## Step 5: Database Schema (Optional)
+## Step 5: Database Schema
 
-The authentication system uses Supabase's built-in `auth.users` table. If you want to extend user profiles, you can create a `profiles` table:
+Set up the required database tables for the Na Winie application:
 
+### 1. User Profiles (Optional)
 ```sql
 -- Create a profiles table that references auth.users
 create table profiles (
@@ -94,6 +95,125 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 ```
 
+### 2. Ingredients Table
+```sql
+-- Create ingredients table
+create table ingredients (
+  id uuid default gen_random_uuid() primary key,
+  name text unique not null,
+  unit_type text not null check (unit_type in ('ml', 'g', 'szt')),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Set up Row Level Security (RLS)
+alter table ingredients enable row level security;
+
+-- Create policy for ingredients (readable by everyone)
+create policy "Ingredients are viewable by everyone" on ingredients
+  for select using (true);
+
+-- Create policy for authenticated users to insert ingredients
+create policy "Authenticated users can insert ingredients" on ingredients
+  for insert with check (auth.role() = 'authenticated');
+
+-- Create indexes for better performance
+create index ingredients_name_idx on ingredients(name);
+create index ingredients_unit_type_idx on ingredients(unit_type);
+
+-- Insert some sample ingredients
+insert into ingredients (name, unit_type) values
+  ('Jajka', 'szt'),
+  ('Mleko', 'ml'),
+  ('Mąka', 'g'),
+  ('Pomidory', 'g'),
+  ('Kurczak', 'g'),
+  ('Cebula', 'szt'),
+  ('Czosnek', 'szt'),
+  ('Oliwa z oliwek', 'ml'),
+  ('Sól', 'g'),
+  ('Pieprz', 'g'),
+  ('Makaron spaghetti', 'g'),
+  ('Ser parmezan', 'g'),
+  ('Boczek', 'g'),
+  ('Mascarpone', 'g'),
+  ('Ziemniaki', 'g'),
+  ('Marchewka', 'g'),
+  ('Papryka', 'szt'),
+  ('Oliwki', 'g'),
+  ('Ser feta', 'g'),
+  ('Ogórek', 'szt');
+```
+
+### 3. Recipes Table
+```sql
+-- Create recipes table
+create table recipes (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  preparation_time_minutes integer not null,
+  complexity_level text not null check (complexity_level in ('easy', 'medium', 'hard')),
+  author_id uuid references auth.users(id),
+  average_rating decimal(3,2) default 0,
+  total_votes integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Set up Row Level Security (RLS)
+alter table recipes enable row level security;
+
+-- Create policy for recipes (readable by everyone)
+create policy "Recipes are viewable by everyone" on recipes
+  for select using (true);
+
+-- Create policy for authenticated users to insert recipes
+create policy "Authenticated users can insert recipes" on recipes
+  for insert with check (auth.role() = 'authenticated');
+
+-- Create policy for users to update their own recipes
+create policy "Users can update their own recipes" on recipes
+  for update using (auth.uid() = author_id);
+
+-- Create indexes for better performance
+create index recipes_name_idx on recipes(name);
+create index recipes_author_id_idx on recipes(author_id);
+create index recipes_average_rating_idx on recipes(average_rating);
+
+-- Insert some sample recipes
+insert into recipes (name, preparation_time_minutes, complexity_level, average_rating, total_votes) values
+  ('Spaghetti Carbonara', 20, 'medium', 4.5, 23),
+  ('Omlet z ziołami', 10, 'easy', 4.2, 15),
+  ('Kurczak w sosie curry', 35, 'medium', 4.8, 42),
+  ('Sałatka grecka', 15, 'easy', 4.3, 18);
+```
+
+### 4. Recipe Ingredients Junction Table (Advanced)
+```sql
+-- Create recipe_ingredients junction table
+create table recipe_ingredients (
+  id uuid default gen_random_uuid() primary key,
+  recipe_id uuid references recipes(id) on delete cascade,
+  ingredient_id uuid references ingredients(id) on delete cascade,
+  amount decimal(10,2) not null,
+  is_optional boolean default false,
+  substitute_recommendation text,
+  created_at timestamptz default now(),
+  unique(recipe_id, ingredient_id)
+);
+
+-- Set up Row Level Security (RLS)
+alter table recipe_ingredients enable row level security;
+
+-- Create policy for recipe ingredients (readable by everyone)
+create policy "Recipe ingredients are viewable by everyone" on recipe_ingredients
+  for select using (true);
+
+-- Create indexes for better performance
+create index recipe_ingredients_recipe_id_idx on recipe_ingredients(recipe_id);
+create index recipe_ingredients_ingredient_id_idx on recipe_ingredients(ingredient_id);
+```
+
 ## Step 6: Test the Authentication
 
 1. Start your development server:
@@ -117,8 +237,9 @@ For production, you should configure a custom SMTP provider:
 
 ## Features Included
 
-The authentication system includes:
+The application now includes:
 
+### Authentication:
 - ✅ User registration with email confirmation
 - ✅ User login/logout
 - ✅ Password reset functionality
@@ -126,6 +247,19 @@ The authentication system includes:
 - ✅ Protected routes
 - ✅ Real-time auth state updates
 - ✅ Responsive UI matching your app's design
+
+### Ingredients System:
+- ✅ Ingredient search with real-time suggestions
+- ✅ Ingredient selection and management
+- ✅ Mock data fallback when Supabase isn't configured
+- ✅ Optimized search with debouncing
+- ✅ Responsive ingredient selector component
+
+### Recipes System:
+- ✅ Recipe display and browsing
+- ✅ Recipe search by ingredients (coming soon)
+- ✅ Mock data fallback for development
+- ✅ Pagination support
 
 ## Security Features
 
