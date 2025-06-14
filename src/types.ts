@@ -83,7 +83,9 @@ export type UserDefaultIngredientAddedDto = Pick<UserDefaultIngredients, 'user_i
 // === Recipes ===
 
 /** DTO representing a recipe item in a list view (omits detailed steps/ingredients). */
-export type RecipeListItemDto = Omit<Recipes, 'steps'>;
+export type RecipeListItemDto = Omit<Recipes, 'steps'> & {
+  image_data?: string; // Base64 encoded image data
+};
 
 /** Paginated response DTO for a list of recipes. */
 export type PaginatedRecipesDto = PaginatedResponse<RecipeListItemDto>;
@@ -113,6 +115,7 @@ export type RecipeIngredientDto = RecipeIngredients & Pick<Ingredients, 'name' |
 export type RecipeDetailDto = Omit<Recipes, 'steps'> & {
   steps: RecipeStep[];
   ingredients: RecipeIngredientDto[];
+  image_data?: string; // Base64 encoded image data
 };
 
 /** Command model for updating an existing recipe (allows partial updates). */

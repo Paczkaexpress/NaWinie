@@ -5,6 +5,10 @@ import { http, HttpResponse } from "msw";
 import * as matchers from "@testing-library/jest-dom/matchers";
 expect.extend(matchers);
 
+// Mock Supabase environment variables for testing
+import.meta.env.PUBLIC_SUPABASE_URL = "https://mock-supabase-url.supabase.co";
+import.meta.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key-for-testing";
+
 const API_BASE_URL = "http://localhost:8000/api";
 
 // Mock API handlers

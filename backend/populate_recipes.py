@@ -1,19 +1,181 @@
 #!/usr/bin/env python3
 """
-Script to populate the database with sample recipes.
-Run this script to add common Polish recipes to your empty database.
+Script to populate the database with sample recipes including images from local folder.
+Run this script to add common Polish recipes with local images to your empty database.
 """
 
 import sys
 import os
+import base64
+import io
+import hashlib
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+try:
+    from PIL import Image as PILImage
+    PILLOW_AVAILABLE = True
+except ImportError:
+    PILLOW_AVAILABLE = False
+    print("⚠️  Pillow not available. Images will not be processed.")
+    print("   Install with: pip install Pillow==10.2.0")
 
 from backend.database import SessionLocal
 from backend.models.recipe import Recipe, RecipeIngredient, ComplexityLevel
 from backend.models.ingredient import Ingredient
 from backend.models.user import User
+
+# Images directory configuration
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", "images")
+
+def normalize_recipe_name_to_filename(recipe_name):
+    """Convert recipe name to filename format (no Polish chars, words joined with _)"""
+    # Polish characters mapping
+    polish_chars = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    }
+    
+    # Replace Polish characters
+    normalized = recipe_name
+    for polish_char, replacement in polish_chars.items():
+        normalized = normalized.replace(polish_char, replacement)
+    
+    # Remove special characters and normalize spaces
+    normalized = ''.join(c if c.isalnum() or c.isspace() else '' for c in normalized)
+    
+    # Replace spaces with underscores and convert to lowercase
+    normalized = '_'.join(normalized.split()).lower()
+    
+    return normalized
+
+def load_local_recipe_image(recipe_name):
+    """Load recipe image from local background/images folder"""
+    
+    if not PILLOW_AVAILABLE:
+        print(f"   ⚠️  Pillow not available, skipping image loading")
+        return None, None
+    
+    try:
+        # Generate filename from recipe name
+        filename_base = normalize_recipe_name_to_filename(recipe_name)
+        
+        # Try different image extensions
+        extensions = ['.jpg', '.jpeg', '.png', '.webp']
+        image_path = None
+        actual_filename = None
+        
+        for ext in extensions:
+            potential_path = os.path.join(IMAGES_DIR, filename_base + ext)
+            if os.path.exists(potential_path):
+                image_path = potential_path
+                actual_filename = filename_base + ext
+                break
+        
+        if not image_path:
+            print(f"   ❌ No image found for '{recipe_name}' (expected: {filename_base}.[jpg|jpeg|png|webp])")
+            return None, None
+        
+        # Load and process the image
+        print(f"   📁 Loading local image: {actual_filename}")
+        
+        with open(image_path, 'rb') as f:
+            image_bytes = f.read()
+        
+        # Process the image with PIL
+        image = PILImage.open(io.BytesIO(image_bytes))
+        
+        # Resize and optimize if needed
+        target_width, target_height = 800, 600
+        image = resize_and_crop_image(image, target_width, target_height)
+        
+        # Convert to optimized JPEG bytes
+        buffer = io.BytesIO()
+        image.save(buffer, "JPEG", quality=85, optimize=True)
+        processed_image_bytes = buffer.getvalue()
+        
+        # Check file size
+        size_kb = len(processed_image_bytes) / 1024
+        print(f"   ✅ Loaded and processed image ({size_kb:.1f} KB)")
+        
+        return processed_image_bytes, actual_filename
+        
+    except Exception as e:
+        print(f"   ❌ Error loading image for '{recipe_name}': {e}")
+        return None, None
+
+def resize_and_crop_image(image, target_width, target_height):
+    """Resize and crop image to target dimensions while maintaining aspect ratio"""
+    
+    # Convert to RGB if necessary
+    if image.mode != 'RGB':
+        image = image.convert('RGB')
+    
+    # Calculate ratios
+    img_width, img_height = image.size
+    target_ratio = target_width / target_height
+    img_ratio = img_width / img_height
+    
+    if img_ratio > target_ratio:
+        # Image is wider - crop width
+        new_width = int(img_height * target_ratio)
+        left = (img_width - new_width) // 2
+        top = 0
+        right = left + new_width
+        bottom = img_height
+    else:
+        # Image is taller - crop height  
+        new_height = int(img_width / target_ratio)
+        left = 0
+        top = (img_height - new_height) // 2
+        right = img_width
+        bottom = top + new_height
+    
+    # Crop and resize
+    image = image.crop((left, top, right, bottom))
+    image = image.resize((target_width, target_height), PILImage.Resampling.LANCZOS)
+    
+    return image
+
+def image_bytes_to_base64(image_bytes):
+    """Convert image bytes to base64 data URL"""
+    if not image_bytes:
+        return None
+    
+    try:
+        base64_string = base64.b64encode(image_bytes).decode()
+        return f"data:image/jpeg;base64,{base64_string}"
+    except Exception as e:
+        print(f"   ❌ Error converting to base64: {e}")
+        return None
+
+def check_images_directory():
+    """Check if images directory exists and list available images"""
+    if not os.path.exists(IMAGES_DIR):
+        print(f"❌ Images directory does not exist: {IMAGES_DIR}")
+        print("   Please create the directory and add recipe images")
+        return False
+    
+    # List available images
+    image_files = []
+    extensions = ['.jpg', '.jpeg', '.png', '.webp']
+    
+    for file in os.listdir(IMAGES_DIR):
+        if any(file.lower().endswith(ext) for ext in extensions):
+            image_files.append(file)
+    
+    if not image_files:
+        print(f"⚠️  No image files found in: {IMAGES_DIR}")
+        print("   Supported formats: .jpg, .jpeg, .png, .webp")
+        return False
+    
+    print(f"✅ Found {len(image_files)} images in: {IMAGES_DIR}")
+    print("   Available images:")
+    for img_file in sorted(image_files):
+        print(f"     - {img_file}")
+    
+    return True
 
 # Sample recipes with ingredients and preparation steps
 SAMPLE_RECIPES = [
@@ -208,7 +370,7 @@ SAMPLE_RECIPES = [
         ]
     },
     {
-        "name": "Domowy lemoniad",
+        "name": "Domowa lemoniada",
         "preparation_time": 10,
         "complexity": ComplexityLevel.EASY,
         "steps": [
@@ -423,12 +585,29 @@ def populate_recipes():
     try:
         print("🍽️  Starting to populate recipes database...")
         
+        # Check images directory
+        if not check_images_directory():
+            print("⚠️  Proceeding without images...")
+        
         # Check if recipes already exist
         existing_count = db.query(Recipe).count()
+        update_images_only = False
         if existing_count > 0:
             print(f"⚠️  Database already contains {existing_count} recipes.")
-            response = input("Do you want to add more recipes anyway? (y/N): ")
-            if response.lower() != 'y':
+            print("Choose an option:")
+            print("1. Add new recipes only (skip existing)")
+            print("2. Update images for existing recipes")
+            print("3. Add new recipes and update images for existing")
+            print("4. Cancel")
+            
+            choice = input("Enter your choice (1-4): ").strip()
+            if choice == '1':
+                update_images_only = False
+            elif choice == '2':
+                update_images_only = True
+            elif choice == '3':
+                update_images_only = 'both'
+            else:
                 print("❌ Operation cancelled.")
                 return
         
@@ -436,15 +615,36 @@ def populate_recipes():
         default_user = create_default_user(db)
         
         added_count = 0
+        updated_count = 0
         skipped_count = 0
         missing_ingredients = set()
         
         for recipe_data in SAMPLE_RECIPES:
             # Check if recipe already exists
             existing = db.query(Recipe).filter(Recipe.name == recipe_data["name"]).first()
-            if existing:
+            
+            if existing and update_images_only == False:
                 print(f"⏭️  Skipping '{recipe_data['name']}' - already exists")
                 skipped_count += 1
+                continue
+            
+            # Load local image for recipe
+            print(f"   📸 Loading local image for '{recipe_data['name']}'...")
+            image_bytes, filename = load_local_recipe_image(recipe_data["name"])
+            image_data = image_bytes_to_base64(image_bytes) if image_bytes else None
+            
+            if image_data:
+                size_kb = len(image_data.encode()) / 1024
+                print(f"   ✅ Loaded image ({size_kb:.1f} KB) → {filename}")
+            else:
+                print(f"   ⚠️  No image loaded (file not found or processing error)")
+            
+            # Handle existing recipe (update image only)
+            if existing:
+                if update_images_only == True or update_images_only == 'both':
+                    existing.image_data = image_data
+                    print(f"🔄 Updated image for existing recipe: {recipe_data['name']}")
+                    updated_count += 1
                 continue
             
             # Create new recipe
@@ -453,7 +653,8 @@ def populate_recipes():
                 preparation_time_minutes=recipe_data["preparation_time"],
                 complexity_level=recipe_data["complexity"],
                 steps=recipe_data["steps"],
-                author_id=default_user.id
+                author_id=default_user.id,
+                image_data=image_data
             )
             db.add(recipe)
             db.flush()  # Get the recipe ID
@@ -481,10 +682,21 @@ def populate_recipes():
         # Commit all changes
         db.commit()
         
-        print(f"\n🎉 Successfully populated database!")
+        # Check how many recipes have images
+        recipes_with_images = db.query(Recipe).filter(Recipe.image_data.isnot(None)).count()
+        total_recipes = db.query(Recipe).count()
+        
+        print(f"\n🎉 Successfully processed database!")
         print(f"   - Added: {added_count} new recipes")
+        print(f"   - Updated: {updated_count} existing recipes")
         print(f"   - Skipped: {skipped_count} existing recipes")
-        print(f"   - Total recipes in database: {db.query(Recipe).count()}")
+        print(f"   - Total recipes in database: {total_recipes}")
+        print(f"   - Recipes with images: {recipes_with_images}/{total_recipes} ({recipes_with_images/total_recipes*100:.1f}%)")
+        
+        if PILLOW_AVAILABLE and added_count > 0:
+            print(f"   - Local images loaded from: {IMAGES_DIR}")
+        elif not PILLOW_AVAILABLE and added_count > 0:
+            print(f"   - ⚠️  Install Pillow to process images: pip install Pillow==10.2.0")
         
         if missing_ingredients:
             print(f"\n⚠️  Missing ingredients ({len(missing_ingredients)}):")

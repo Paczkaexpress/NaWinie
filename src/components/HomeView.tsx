@@ -20,8 +20,16 @@ import { Search, Filter, SortAsc } from "lucide-react";
  * 3. Show default recipes when no ingredients selected (via useDefaultRecipes).
  * 4. Render the IngredientSelector (sidebar) and RecipeGrid (main area).
  */
-const HomeView: React.FC = () => {
+const HomeView: React.FC = React.memo(() => {
   console.log('HomeView rendering...');
+
+  // Show loading state during hydration
+  const [isHydrated, setIsHydrated] = React.useState(false);
+
+  React.useEffect(() => {
+    console.log('HomeView hydrating...');
+    setIsHydrated(true);
+  }, []);
 
   /* Synchronise ingredients with the URL */
   const {
@@ -33,6 +41,12 @@ const HomeView: React.FC = () => {
 
   console.log('Selected ingredients:', selectedIngredients);
 
+  // Memoize ingredient IDs to prevent unnecessary re-renders
+  const ingredientIds = React.useMemo(
+    () => selectedIngredients.map((i) => i.id),
+    [selectedIngredients]
+  );
+
   /* Search for recipes whenever the selected ingredient IDs change */
   const {
     recipes: searchedRecipes,
@@ -40,7 +54,7 @@ const HomeView: React.FC = () => {
     error: recipesError,
     hasMore: hasMoreSearched,
     loadMore: loadMoreSearched,
-  } = useRecipeSearch(selectedIngredients.map((i) => i.id));
+  } = useRecipeSearch(ingredientIds);
 
   /* Load default recipes for when no ingredients are selected */
   const {
@@ -51,23 +65,34 @@ const HomeView: React.FC = () => {
     loadMore: loadMoreDefault,
   } = useDefaultRecipes();
 
-  // Determine which recipes to show and which functions to use
-  const hasSelectedIngredients = selectedIngredients.length > 0;
-  const recipes = hasSelectedIngredients ? searchedRecipes : defaultRecipes;
-  const isLoading = hasSelectedIngredients ? isRecipesLoading : isDefaultLoading;
-  const error = hasSelectedIngredients ? recipesError : defaultError;
-  const hasMore = hasSelectedIngredients ? hasMoreSearched : hasMoreDefault;
-  const loadMore = hasSelectedIngredients ? loadMoreSearched : loadMoreDefault;
+  // Memoize computed values to prevent unnecessary re-renders
+  const memoizedValues = React.useMemo(() => {
+    const hasSelectedIngredients = selectedIngredients.length > 0;
+    return {
+      hasSelectedIngredients,
+      recipes: hasSelectedIngredients ? searchedRecipes : defaultRecipes,
+      isLoading: hasSelectedIngredients ? isRecipesLoading : isDefaultLoading,
+      error: hasSelectedIngredients ? recipesError : defaultError,
+      hasMore: hasSelectedIngredients ? hasMoreSearched : hasMoreDefault,
+      loadMore: hasSelectedIngredients ? loadMoreSearched : loadMoreDefault,
+    };
+  }, [
+    selectedIngredients.length,
+    searchedRecipes,
+    defaultRecipes,
+    isRecipesLoading,
+    isDefaultLoading,
+    recipesError,
+    defaultError,
+    hasMoreSearched,
+    hasMoreDefault,
+    loadMoreSearched,
+    loadMoreDefault,
+  ]);
+
+  const { hasSelectedIngredients, recipes, isLoading, error, hasMore, loadMore } = memoizedValues;
 
   console.log('Recipes:', recipes, 'Error:', error, 'Has ingredients:', hasSelectedIngredients);
-
-  // Show loading state during hydration
-  const [isHydrated, setIsHydrated] = React.useState(false);
-
-  React.useEffect(() => {
-    console.log('HomeView hydrating...');
-    setIsHydrated(true);
-  }, []);
 
   if (!isHydrated) {
     return (
@@ -192,6 +217,6 @@ const HomeView: React.FC = () => {
       </div>
     </ErrorBoundary>
   );
-};
+});
 
 export default HomeView; 

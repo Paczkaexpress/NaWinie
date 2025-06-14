@@ -99,6 +99,7 @@ class RecipeListItemDto(BaseModel):
     preparation_time_minutes: int
     complexity_level: ComplexityLevel
     author_id: UUID
+    image_data: Optional[str] = None  # Base64 encoded image data
     average_rating: float
     total_votes: int
     created_at: datetime
@@ -112,6 +113,7 @@ class RecipeDetailDto(BaseModel):
     complexity_level: ComplexityLevel
     steps: List[RecipeStepModel]
     author_id: UUID
+    image_data: Optional[str] = None  # Base64 encoded image data
     average_rating: float
     total_votes: int
     created_at: datetime
@@ -130,4 +132,14 @@ class RecipeDetailResponse(BaseModel):
 class RatingUpdateResponse(BaseModel):
     """DTO representing the updated rating status of a recipe after a vote."""
     average_rating: float
-    total_votes: int 
+    total_votes: int
+
+class AuthResponse(BaseModel):
+    """Response model for authentication (login/register)"""
+    access_token: str = Field(..., description="JWT access token")
+    token_type: str = Field(default="bearer", description="Token type")
+    user: UserResponse = Field(..., description="User profile information")
+
+class MessageResponse(BaseModel):
+    """Generic response model for simple messages"""
+    message: str = Field(..., description="Response message") 

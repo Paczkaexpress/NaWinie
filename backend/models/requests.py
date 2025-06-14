@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
+from pydantic import EmailStr
 
 class UnitType(str, Enum):
     ML = "ml"
@@ -114,4 +115,21 @@ class RecipeViewHistoryQuery(BaseModel):
                 "page": 1,
                 "limit": 10
             }
-        } 
+        }
+
+class LoginRequest(BaseModel):
+    """Request model for user login"""
+    email: EmailStr = Field(..., description="User's email address")
+    password: str = Field(..., min_length=6, description="User's password")
+
+class RegisterRequest(BaseModel):
+    """Request model for user registration"""
+    email: EmailStr = Field(..., description="User's email address")
+    password: str = Field(..., min_length=6, description="User's password")
+    confirm_password: str = Field(..., min_length=6, description="Password confirmation")
+
+    @validator('confirm_password')
+    def passwords_match(cls, v, values, **kwargs):
+        if 'password' in values and v != values['password']:
+            raise ValueError('Passwords do not match')
+        return v 

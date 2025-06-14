@@ -4,7 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from pydantic import ValidationError
 
-from .routers import users, ingredients, monitoring, user_default_ingredients, recipes  # Import implemented routers
+from .routers import users, ingredients, monitoring, user_default_ingredients, recipes, auth  # Import implemented routers
 from .database import engine, Base
 from .models import User, Ingredient, UserDefaultIngredient, Recipe, RecipeIngredient, RecipeRating, RecipeView  # Import implemented models
 
@@ -28,8 +28,14 @@ from .utils.error_handlers import (
 setup_logging("INFO", enable_file_logging=False)
 logger = get_logger(__name__)
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables only if not in testing mode
+import os
+if not os.getenv("TESTING", False):
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.warning(f"Could not create database tables: {e}")
 
 app = FastAPI(
     title="Na Winie API",
@@ -70,7 +76,7 @@ app.include_router(ingredients.router, prefix="/api/ingredients", tags=["Ingredi
 app.include_router(monitoring.router, prefix="/api/monitoring", tags=["Monitoring"])
 app.include_router(user_default_ingredients.router, prefix="/api", tags=["User Default Ingredients"])
 app.include_router(recipes.router, prefix="/api", tags=["Recipes"])
-# app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])  # To be implemented
+app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 
 @app.get("/")
 async def root():
