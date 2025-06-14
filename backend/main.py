@@ -28,8 +28,14 @@ from .utils.error_handlers import (
 setup_logging("INFO", enable_file_logging=False)
 logger = get_logger(__name__)
 
-# Create database tables
-Base.metadata.create_all(bind=engine)
+# Create database tables only if not in testing mode
+import os
+if not os.getenv("TESTING", False):
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.warning(f"Could not create database tables: {e}")
 
 app = FastAPI(
     title="Na Winie API",

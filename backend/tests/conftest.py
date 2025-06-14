@@ -16,6 +16,9 @@ import sys
 import os
 from datetime import datetime
 
+# Set testing environment variable to prevent production database connection
+os.environ["TESTING"] = "1"
+
 from backend.main import app
 from backend.database import get_db, Base
 from backend.models.user import User

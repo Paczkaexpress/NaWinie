@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from jose import jwt
@@ -125,6 +125,6 @@ class AuthService:
             )
         )
 
-def get_auth_service(db: Session) -> AuthService:
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     """Dependency to get auth service instance."""
     return AuthService(db) 

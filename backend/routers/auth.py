@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import Annotated
 
 from ..database import get_db
 from ..services.auth_service import get_auth_service, AuthService
@@ -40,8 +39,7 @@ router = APIRouter()
 )
 async def login(
     login_data: LoginRequest,
-    db: Annotated[Session, Depends(get_db)],
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: AuthService = Depends(get_auth_service)
 ) -> AuthResponse:
     """
     Login endpoint for user authentication.
@@ -101,8 +99,7 @@ async def login(
 )
 async def register(
     register_data: RegisterRequest,
-    db: Annotated[Session, Depends(get_db)],
-    auth_service: Annotated[AuthService, Depends(get_auth_service)]
+    auth_service: AuthService = Depends(get_auth_service)
 ) -> AuthResponse:
     """
     Registration endpoint for new users.
