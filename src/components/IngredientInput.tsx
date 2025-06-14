@@ -88,7 +88,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-gray-200 rounded-lg">
       {/* Ingredient Selection */}
       <div className="md:col-span-4 relative">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-search-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
           Składnik <span className="text-red-500">*</span>
         </label>
         
@@ -105,6 +105,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
                 setSearchTerm('');
               }}
               className="text-gray-400 hover:text-gray-600"
+              aria-label="Usuń wybrany składnik"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -114,6 +115,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
         ) : (
           <>
             <input
+              id={`ingredient-search-${ingredient.ingredient_id || 'new'}`}
               type="text"
               value={searchTerm}
               onChange={handleSearchChange}
@@ -152,10 +154,11 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
 
       {/* Amount */}
       <div className="md:col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-amount-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
           Ilość <span className="text-red-500">*</span>
         </label>
         <input
+          id={`ingredient-amount-${ingredient.ingredient_id || 'new'}`}
           type="number"
           value={ingredient.amount || ''}
           onChange={handleAmountChange}
@@ -191,10 +194,11 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
 
       {/* Substitute recommendation */}
       <div className="md:col-span-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-substitute-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
           Zamiennik
         </label>
         <input
+          id={`ingredient-substitute-${ingredient.ingredient_id || 'new'}`}
           type="text"
           value={ingredient.substitute_recommendation || ''}
           onChange={handleSubstituteChange}

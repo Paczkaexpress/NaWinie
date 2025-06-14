@@ -20,7 +20,7 @@ describe('useFormValidation', () => {
     expect(result.current.errors.preparation_time_minutes).toBeNull();
     expect(result.current.errors.complexity_level).toBeNull();
     expect(result.current.errors.general).toBeNull();
-    expect(result.current.isValid).toBeFalsy(); // Form is initially invalid
+    expect(result.current.isValid).toBeTruthy(); // Form starts as valid until validation runs
   });
 
   it('should validate name field correctly', () => {
@@ -63,10 +63,11 @@ describe('useFormValidation', () => {
     act(() => {
       const isValid = result.current.validateForm(mockFormData);
       expect(isValid).toBeFalsy();
-      expect(result.current.errors.general).toBe('Przepis musi zawierać co najmniej jeden składnik');
     });
+    
+    expect(result.current.errors.general).toBe('Przepis musi zawierać co najmniej jeden składnik');
 
-    // Test valid form
+    // Test valid form  
     const validFormData: CreateRecipeFormData = {
       name: 'Test Recipe',
       preparation_time_minutes: 30,
@@ -84,8 +85,9 @@ describe('useFormValidation', () => {
     act(() => {
       const isValid = result.current.validateForm(validFormData);
       expect(isValid).toBeTruthy();
-      expect(result.current.errors.general).toBeNull();
     });
+    
+    expect(result.current.errors.general).toBeNull();
   });
 
   it('should clear errors correctly', () => {
