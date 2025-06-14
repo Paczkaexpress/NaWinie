@@ -47,37 +47,52 @@ export async function searchIngredients(
   options?: FetchOptions
 ): Promise<PaginatedIngredientsDto> {
   try {
-    let supabaseQuery = supabase
-      .from('ingredients')
-      .select('*', { count: 'exact' });
-
-    // Add search filter if query is provided
-    if (query && query.length >= 2) {
-      supabaseQuery = supabaseQuery.ilike('name', `%${query}%`);
+    // Try HTTP API first (for testing with MSW or local backend)
+    const url = new URL(`${API_BASE_URL}/ingredients`);
+    url.searchParams.set('page', page.toString());
+    url.searchParams.set('limit', limit.toString());
+    if (query) {
+      url.searchParams.set('search', query);
     }
-
-    // Add pagination
-    const { data, error, count } = await supabaseQuery
-      .order('name', { ascending: true })
-      .range((page - 1) * limit, page * limit - 1);
-
-    if (error) throw error;
-
-    const totalPages = Math.ceil((count || 0) / limit);
-
-    return {
-      data: data || [],
-      pagination: {
-        page,
-        limit,
-        total_items: count || 0,
-        total_pages: totalPages
-      }
-    };
+    
+    return await fetchWithRetry<PaginatedIngredientsDto>(url.toString(), options);
   } catch (error) {
-    console.error('Error fetching ingredients from Supabase, using mock data:', error);
-    // Return mock data as fallback
-    return getMockIngredients(query, page, limit);
+    console.error('Error fetching ingredients from HTTP API, trying Supabase:', error);
+    
+    try {
+      // Fallback to Supabase
+      let supabaseQuery = supabase
+        .from('ingredients')
+        .select('*', { count: 'exact' });
+
+      // Add search filter if query is provided
+      if (query && query.length >= 2) {
+        supabaseQuery = supabaseQuery.ilike('name', `%${query}%`);
+      }
+
+      // Add pagination
+      const { data, error: supabaseError, count } = await supabaseQuery
+        .order('name', { ascending: true })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (supabaseError) throw supabaseError;
+
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        data: data || [],
+        pagination: {
+          page,
+          limit,
+          total_items: count || 0,
+          total_pages: totalPages
+        }
+      };
+    } catch (supabaseError) {
+      console.error('Error fetching ingredients from Supabase, using mock data:', supabaseError);
+      // Return mock data as final fallback
+      return getMockIngredients(query, page, limit);
+    }
   }
 }
 
@@ -100,15 +115,22 @@ export async function findRecipesByIngredients(
       };
     }
 
+    // Try HTTP API first (for testing with MSW or local backend)
+    const url = new URL(`${API_BASE_URL}/recipes/find-by-ingredients`);
+    url.searchParams.set('page', page.toString());
+    url.searchParams.set('limit', limit.toString());
+    ingredientIds.forEach(id => url.searchParams.append('ingredient_ids', id));
+    
+    return await fetchWithRetry<PaginatedRecipesDto>(url.toString(), options);
+  } catch (error) {
+    console.error('Error finding recipes by ingredients from HTTP API:', error);
+    
     // This is a complex query that would require joins in Supabase
     // For now, we'll return mock recipes filtered by ingredients
     console.log('Searching recipes by ingredients:', ingredientIds);
     
     // TODO: Implement proper Supabase query with joins when the database schema is set up
     // For now, return mock data
-    return getMockRecipes(page, limit);
-  } catch (error) {
-    console.error('Error finding recipes by ingredients:', error);
     return getMockRecipes(page, limit);
   }
 }
@@ -118,34 +140,44 @@ import { getMockRecipes, getMockIngredients } from './mockData';
 
 export async function getRecipes(page = 1, limit = 10): Promise<PaginatedRecipesDto> {
   try {
-    // Get total count for pagination
-    const { count } = await supabase
-      .from('recipes')
-      .select('*', { count: 'exact', head: true });
-
-    // Get recipes for the current page
-    const { data, error } = await supabase
-      .from('recipes')
-      .select('*')
-      .order('average_rating', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
-
-    if (error) throw error;
-
-    const totalPages = Math.ceil((count || 0) / limit);
-
-    return {
-      data: data || [],
-      pagination: {
-        page,
-        limit,
-        total_items: count || 0,
-        total_pages: totalPages
-      }
-    };
+    // Try HTTP API first (for testing with MSW or local backend)
+    const url = new URL(`${API_BASE_URL}/recipes`);
+    url.searchParams.set('page', page.toString());
+    url.searchParams.set('limit', limit.toString());
+    
+    return await fetchWithRetry<PaginatedRecipesDto>(url.toString());
   } catch (error) {
-    console.error('Error fetching recipes from Supabase, using mock data:', error);
-    // Return mock data as fallback to prevent empty content and blinking
-    return getMockRecipes(page, limit);
+    console.error('Error fetching recipes from HTTP API, trying Supabase:', error);
+    
+    try {
+      // Fallback to Supabase
+      const { count } = await supabase
+        .from('recipes')
+        .select('*', { count: 'exact', head: true });
+
+      const { data, error: supabaseError } = await supabase
+        .from('recipes')
+        .select('*')
+        .order('average_rating', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (supabaseError) throw supabaseError;
+
+      const totalPages = Math.ceil((count || 0) / limit);
+
+      return {
+        data: data || [],
+        pagination: {
+          page,
+          limit,
+          total_items: count || 0,
+          total_pages: totalPages
+        }
+      };
+    } catch (supabaseError) {
+      console.error('Error fetching recipes from Supabase, using mock data:', supabaseError);
+      // Return mock data as final fallback
+      return getMockRecipes(page, limit);
+    }
   }
 }
