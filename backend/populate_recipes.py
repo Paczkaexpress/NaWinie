@@ -1,17 +1,14 @@
 #!/usr/bin/env python3
 """
-Script to populate the database with sample recipes including real images from the internet.
-Run this script to add common Polish recipes with real food images to your empty database.
+Script to populate the database with sample recipes including images from local folder.
+Run this script to add common Polish recipes with local images to your empty database.
 """
 
 import sys
 import os
 import base64
 import io
-import requests
 import hashlib
-import time
-from urllib.parse import quote
 
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -29,165 +26,84 @@ from backend.models.recipe import Recipe, RecipeIngredient, ComplexityLevel
 from backend.models.ingredient import Ingredient
 from backend.models.user import User
 
-# Unsplash API configuration
-UNSPLASH_ACCESS_KEY = "your_unsplash_access_key"  # Get from https://unsplash.com/developers
-UNSPLASH_BASE_URL = "https://api.unsplash.com"
+# Images directory configuration
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "backend", "images")
 
-# Create images directory if it doesn't exist
-IMAGES_DIR = os.path.join(os.path.dirname(__file__), "images")
-if not os.path.exists(IMAGES_DIR):
-    os.makedirs(IMAGES_DIR)
-    print(f"✅ Created images directory: {IMAGES_DIR}")
+def normalize_recipe_name_to_filename(recipe_name):
+    """Convert recipe name to filename format (no Polish chars, words joined with _)"""
+    # Polish characters mapping
+    polish_chars = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    }
+    
+    # Replace Polish characters
+    normalized = recipe_name
+    for polish_char, replacement in polish_chars.items():
+        normalized = normalized.replace(polish_char, replacement)
+    
+    # Remove special characters and normalize spaces
+    normalized = ''.join(c if c.isalnum() or c.isspace() else '' for c in normalized)
+    
+    # Replace spaces with underscores and convert to lowercase
+    normalized = '_'.join(normalized.split()).lower()
+    
+    return normalized
 
-def download_recipe_image(recipe_name, recipe_id):
-    """Download a real food image from Unsplash API"""
+def load_local_recipe_image(recipe_name):
+    """Load recipe image from local background/images folder"""
     
     if not PILLOW_AVAILABLE:
-        print(f"   ⚠️  Pillow not available, skipping image download")
+        print(f"   ⚠️  Pillow not available, skipping image loading")
         return None, None
     
     try:
-        # Create a clean filename for the image
-        clean_name = "".join(c for c in recipe_name if c.isalnum() or c in (' ', '-', '_')).rstrip()
-        clean_name = clean_name.replace(' ', '_').lower()
-        filename = f"{clean_name}_{str(recipe_id)[:8]}.jpg"
-        filepath = os.path.join(IMAGES_DIR, filename)
+        # Generate filename from recipe name
+        filename_base = normalize_recipe_name_to_filename(recipe_name)
         
-        # Check if image already exists
-        if os.path.exists(filepath):
-            print(f"   📁 Using existing image: {filename}")
-            with open(filepath, 'rb') as f:
-                image_bytes = f.read()
-            return image_bytes, filename
+        # Try different image extensions
+        extensions = ['.jpg', '.jpeg', '.png', '.webp']
+        image_path = None
+        actual_filename = None
         
-        # Search for images on Unsplash
-        search_terms = [
-            f"{recipe_name} food",
-            f"{recipe_name}",
-            "polish food",
-            "homemade food",
-            "traditional food"
-        ]
+        for ext in extensions:
+            potential_path = os.path.join(IMAGES_DIR, filename_base + ext)
+            if os.path.exists(potential_path):
+                image_path = potential_path
+                actual_filename = filename_base + ext
+                break
         
-        image_url = None
-        for search_term in search_terms:
-            print(f"   🔍 Searching for: {search_term}")
-            
-            # Try Unsplash first
-            if UNSPLASH_ACCESS_KEY and UNSPLASH_ACCESS_KEY != "your_unsplash_access_key":
-                image_url = search_unsplash_image(search_term)
-                if image_url:
-                    break
-            
-            # Fallback to placeholder service
-            if not image_url:
-                image_url = get_placeholder_food_image(search_term)
-                if image_url:
-                    break
-        
-        if not image_url:
-            print(f"   ❌ No suitable image found")
+        if not image_path:
+            print(f"   ❌ No image found for '{recipe_name}' (expected: {filename_base}.[jpg|jpeg|png|webp])")
             return None, None
         
-        # Download the image
-        print(f"   ⬇️  Downloading image...")
-        response = requests.get(image_url, timeout=10)
-        response.raise_for_status()
+        # Load and process the image
+        print(f"   📁 Loading local image: {actual_filename}")
         
-        # Process the image
-        image = PILImage.open(io.BytesIO(response.content))
+        with open(image_path, 'rb') as f:
+            image_bytes = f.read()
         
-        # Resize and optimize
+        # Process the image with PIL
+        image = PILImage.open(io.BytesIO(image_bytes))
+        
+        # Resize and optimize if needed
         target_width, target_height = 800, 600
         image = resize_and_crop_image(image, target_width, target_height)
         
-        # Save to file
-        image.save(filepath, "JPEG", quality=85, optimize=True)
-        print(f"   💾 Saved to: images/{filename}")
-        
-        # Convert to bytes for database
+        # Convert to optimized JPEG bytes
         buffer = io.BytesIO()
         image.save(buffer, "JPEG", quality=85, optimize=True)
-        image_bytes = buffer.getvalue()
+        processed_image_bytes = buffer.getvalue()
         
         # Check file size
-        size_kb = len(image_bytes) / 1024
-        print(f"   📏 Image size: {size_kb:.1f} KB")
+        size_kb = len(processed_image_bytes) / 1024
+        print(f"   ✅ Loaded and processed image ({size_kb:.1f} KB)")
         
-        return image_bytes, filename
+        return processed_image_bytes, actual_filename
         
     except Exception as e:
-        print(f"   ❌ Error downloading image: {e}")
+        print(f"   ❌ Error loading image for '{recipe_name}': {e}")
         return None, None
-
-def search_unsplash_image(search_term):
-    """Search for images on Unsplash"""
-    try:
-        headers = {
-            "Authorization": f"Client-ID {UNSPLASH_ACCESS_KEY}"
-        }
-        
-        params = {
-            "query": search_term,
-            "page": 1,
-            "per_page": 10,
-            "orientation": "landscape",
-            "category": "food"
-        }
-        
-        response = requests.get(
-            f"{UNSPLASH_BASE_URL}/search/photos",
-            headers=headers,
-            params=params,
-            timeout=10
-        )
-        
-        if response.status_code == 200:
-            data = response.json()
-            if data['results']:
-                # Get the first suitable image
-                for result in data['results']:
-                    # Prefer regular size (better quality/size ratio)
-                    return result['urls']['regular']
-        
-        return None
-        
-    except Exception as e:
-        print(f"   ⚠️  Unsplash search error: {e}")
-        return None
-
-def get_placeholder_food_image(search_term):
-    """Get a placeholder food image as fallback"""
-    try:
-        # Use a food-specific placeholder service
-        food_categories = {
-            "naleśniki": "pancakes",
-            "makaron": "pasta", 
-            "omlet": "omelette",
-            "owsianka": "oatmeal",
-            "zupa": "soup",
-            "chleb": "bread",
-            "surówka": "salad",
-            "ziemniaki": "potatoes",
-            "koktajl": "smoothie",
-            "herbata": "tea"
-        }
-        
-        # Try to match recipe name to food category
-        category = "food"
-        for polish_word, english_word in food_categories.items():
-            if polish_word.lower() in search_term.lower():
-                category = english_word
-                break
-        
-        # Use Picsum with a food-related seed
-        seed = abs(hash(search_term)) % 1000
-        placeholder_url = f"https://picsum.photos/800/600?random={seed}"
-        
-        return placeholder_url
-        
-    except Exception:
-        return None
 
 def resize_and_crop_image(image, target_width, target_height):
     """Resize and crop image to target dimensions while maintaining aspect ratio"""
@@ -202,16 +118,14 @@ def resize_and_crop_image(image, target_width, target_height):
     img_ratio = img_width / img_height
     
     if img_ratio > target_ratio:
-        # Image is wider than target, crop width
-        new_height = img_height
+        # Image is wider - crop width
         new_width = int(img_height * target_ratio)
         left = (img_width - new_width) // 2
         top = 0
         right = left + new_width
         bottom = img_height
     else:
-        # Image is taller than target, crop height
-        new_width = img_width
+        # Image is taller - crop height  
         new_height = int(img_width / target_ratio)
         left = 0
         top = (img_height - new_height) // 2
@@ -236,36 +150,30 @@ def image_bytes_to_base64(image_bytes):
         print(f"   ❌ Error converting to base64: {e}")
         return None
 
-def setup_unsplash_api():
-    """Setup Unsplash API key if not configured"""
-    global UNSPLASH_ACCESS_KEY
+def check_images_directory():
+    """Check if images directory exists and list available images"""
+    if not os.path.exists(IMAGES_DIR):
+        print(f"❌ Images directory does not exist: {IMAGES_DIR}")
+        print("   Please create the directory and add recipe images")
+        return False
     
-    if UNSPLASH_ACCESS_KEY == "your_unsplash_access_key":
-        print("\n🔑 Unsplash API Setup")
-        print("=" * 40)
-        print("To download high-quality food images:")
-        print("1. Go to https://unsplash.com/developers")
-        print("2. Create a free account and app")
-        print("3. Copy your Access Key")
-        print("4. Set it in this script or as environment variable")
-        print()
-        
-        # Try to get from environment
-        env_key = os.getenv('UNSPLASH_ACCESS_KEY')
-        if env_key:
-            UNSPLASH_ACCESS_KEY = env_key
-            print("✅ Found Unsplash API key in environment variables")
-            return True
-        
-        # Ask user for key
-        user_key = input("Enter your Unsplash Access Key (or press Enter to use placeholders): ").strip()
-        if user_key:
-            UNSPLASH_ACCESS_KEY = user_key
-            print("✅ Unsplash API key configured")
-            return True
-        else:
-            print("⚠️  Using placeholder images instead")
-            return False
+    # List available images
+    image_files = []
+    extensions = ['.jpg', '.jpeg', '.png', '.webp']
+    
+    for file in os.listdir(IMAGES_DIR):
+        if any(file.lower().endswith(ext) for ext in extensions):
+            image_files.append(file)
+    
+    if not image_files:
+        print(f"⚠️  No image files found in: {IMAGES_DIR}")
+        print("   Supported formats: .jpg, .jpeg, .png, .webp")
+        return False
+    
+    print(f"✅ Found {len(image_files)} images in: {IMAGES_DIR}")
+    print("   Available images:")
+    for img_file in sorted(image_files):
+        print(f"     - {img_file}")
     
     return True
 
@@ -462,7 +370,7 @@ SAMPLE_RECIPES = [
         ]
     },
     {
-        "name": "Domowy lemoniad",
+        "name": "Domowa lemoniada",
         "preparation_time": 10,
         "complexity": ComplexityLevel.EASY,
         "steps": [
@@ -677,15 +585,29 @@ def populate_recipes():
     try:
         print("🍽️  Starting to populate recipes database...")
         
-        # Setup Unsplash API for image downloading
-        setup_unsplash_api()
+        # Check images directory
+        if not check_images_directory():
+            print("⚠️  Proceeding without images...")
         
         # Check if recipes already exist
         existing_count = db.query(Recipe).count()
+        update_images_only = False
         if existing_count > 0:
             print(f"⚠️  Database already contains {existing_count} recipes.")
-            response = input("Do you want to add more recipes anyway? (y/N): ")
-            if response.lower() != 'y':
+            print("Choose an option:")
+            print("1. Add new recipes only (skip existing)")
+            print("2. Update images for existing recipes")
+            print("3. Add new recipes and update images for existing")
+            print("4. Cancel")
+            
+            choice = input("Enter your choice (1-4): ").strip()
+            if choice == '1':
+                update_images_only = False
+            elif choice == '2':
+                update_images_only = True
+            elif choice == '3':
+                update_images_only = 'both'
+            else:
                 print("❌ Operation cancelled.")
                 return
         
@@ -693,28 +615,37 @@ def populate_recipes():
         default_user = create_default_user(db)
         
         added_count = 0
+        updated_count = 0
         skipped_count = 0
         missing_ingredients = set()
         
         for recipe_data in SAMPLE_RECIPES:
             # Check if recipe already exists
             existing = db.query(Recipe).filter(Recipe.name == recipe_data["name"]).first()
-            if existing:
+            
+            if existing and update_images_only == False:
                 print(f"⏭️  Skipping '{recipe_data['name']}' - already exists")
                 skipped_count += 1
                 continue
             
-            # Download real image for recipe
-            print(f"   📸 Downloading real image for '{recipe_data['name']}'...")
-            temp_id = hashlib.md5(recipe_data["name"].encode()).hexdigest()[:8]
-            image_bytes, filename = download_recipe_image(recipe_data["name"], temp_id)
+            # Load local image for recipe
+            print(f"   📸 Loading local image for '{recipe_data['name']}'...")
+            image_bytes, filename = load_local_recipe_image(recipe_data["name"])
             image_data = image_bytes_to_base64(image_bytes) if image_bytes else None
             
             if image_data:
                 size_kb = len(image_data.encode()) / 1024
-                print(f"   ✅ Downloaded image ({size_kb:.1f} KB) → {filename}")
+                print(f"   ✅ Loaded image ({size_kb:.1f} KB) → {filename}")
             else:
-                print(f"   ⚠️  No image downloaded (network error or API unavailable)")
+                print(f"   ⚠️  No image loaded (file not found or processing error)")
+            
+            # Handle existing recipe (update image only)
+            if existing:
+                if update_images_only == True or update_images_only == 'both':
+                    existing.image_data = image_data
+                    print(f"🔄 Updated image for existing recipe: {recipe_data['name']}")
+                    updated_count += 1
+                continue
             
             # Create new recipe
             recipe = Recipe(
@@ -755,14 +686,15 @@ def populate_recipes():
         recipes_with_images = db.query(Recipe).filter(Recipe.image_data.isnot(None)).count()
         total_recipes = db.query(Recipe).count()
         
-        print(f"\n🎉 Successfully populated database!")
+        print(f"\n🎉 Successfully processed database!")
         print(f"   - Added: {added_count} new recipes")
+        print(f"   - Updated: {updated_count} existing recipes")
         print(f"   - Skipped: {skipped_count} existing recipes")
         print(f"   - Total recipes in database: {total_recipes}")
         print(f"   - Recipes with images: {recipes_with_images}/{total_recipes} ({recipes_with_images/total_recipes*100:.1f}%)")
         
         if PILLOW_AVAILABLE and added_count > 0:
-            print(f"   - Real images downloaded: ~200KB each, saved to backend/images/")
+            print(f"   - Local images loaded from: {IMAGES_DIR}")
         elif not PILLOW_AVAILABLE and added_count > 0:
             print(f"   - ⚠️  Install Pillow to process images: pip install Pillow==10.2.0")
         
