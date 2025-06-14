@@ -148,4 +148,58 @@ export type UserRecipeViewHistoryItemDto = Pick<RecipeViews, 'id' | 'recipe_id' 
 };
 
 /** Paginated response DTO for the user's recipe view history. */
-export type PaginatedUserRecipeViewHistoryDto = PaginatedResponse<UserRecipeViewHistoryItemDto>; 
+export type PaginatedUserRecipeViewHistoryDto = PaginatedResponse<UserRecipeViewHistoryItemDto>;
+
+// === Add Recipe Form Types ===
+
+/** Form data for creating a new recipe */
+export type CreateRecipeFormData = {
+  name: string;
+  preparation_time_minutes: number;
+  complexity_level: 'easy' | 'medium' | 'hard';
+  steps: RecipeStepFormData[];
+  ingredients: RecipeIngredientFormData[];
+  image?: File;
+};
+
+/** Ingredient data in the form */
+export type RecipeIngredientFormData = {
+  ingredient_id: string;
+  amount: number;
+  is_optional: boolean;
+  substitute_recommendation: string | null;
+};
+
+/** Step data in the form */
+export type RecipeStepFormData = {
+  step: number;
+  description: string;
+};
+
+/** Basic recipe information section */
+export type BasicRecipeInfo = {
+  name: string;
+  preparation_time_minutes: number;
+  complexity_level: 'easy' | 'medium' | 'hard';
+};
+
+/** Form validation state */
+export type FormValidationState = {
+  name: string | null;
+  preparation_time_minutes: string | null;
+  complexity_level: string | null;
+  steps: Array<string | null>;
+  ingredients: Array<{
+    ingredient_id: string | null;
+    amount: string | null;
+    substitute_recommendation: string | null;
+  }>;
+  image: string | null;
+  general: string | null;
+};
+
+/** Image preview data */
+export type ImagePreview = {
+  file: File;
+  url: string;
+}; 
