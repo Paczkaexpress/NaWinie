@@ -123,15 +123,77 @@ export async function findRecipesByIngredients(
     
     return await fetchWithRetry<PaginatedRecipesDto>(url.toString(), options);
   } catch (error) {
-    console.error('Error finding recipes by ingredients from HTTP API:', error);
+    console.error('Error finding recipes by ingredients from HTTP API, trying Supabase:', error);
     
-    // This is a complex query that would require joins in Supabase
-    // For now, we'll return mock recipes filtered by ingredients
-    console.log('Searching recipes by ingredients:', ingredientIds);
-    
-    // TODO: Implement proper Supabase query with joins when the database schema is set up
-    // For now, return mock data
-    return getMockRecipes(page, limit);
+    try {
+      // Fallback to Supabase with proper JOIN query
+      // Query recipes that contain at least one of the selected ingredients
+      const { data: recipeIds, error: joinError } = await supabase
+        .from('recipe_ingredients')
+        .select('recipe_id')
+        .in('ingredient_id', ingredientIds);
+
+      if (joinError) throw joinError;
+
+      if (!recipeIds || recipeIds.length === 0) {
+        return {
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total_items: 0,
+            total_pages: 0
+          }
+        };
+      }
+
+      // Get unique recipe IDs
+      const uniqueRecipeIds = [...new Set(recipeIds.map(r => r.recipe_id))];
+
+      // Get count for pagination
+      const totalItems = uniqueRecipeIds.length;
+      const totalPages = Math.ceil(totalItems / limit);
+
+      // Get paginated recipes
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedRecipeIds = uniqueRecipeIds.slice(startIndex, endIndex);
+
+      if (paginatedRecipeIds.length === 0) {
+        return {
+          data: [],
+          pagination: {
+            page,
+            limit,
+            total_items: totalItems,
+            total_pages: totalPages
+          }
+        };
+      }
+
+      // Fetch the actual recipe data
+      const { data, error: supabaseError } = await supabase
+        .from('recipes')
+        .select('*')
+        .in('id', paginatedRecipeIds)
+        .order('average_rating', { ascending: false });
+
+      if (supabaseError) throw supabaseError;
+
+      return {
+        data: data || [],
+        pagination: {
+          page,
+          limit,
+          total_items: totalItems,
+          total_pages: totalPages
+        }
+      };
+    } catch (supabaseError) {
+      console.error('Error finding recipes by ingredients from Supabase, using mock data:', supabaseError);
+      // Return mock data as final fallback
+      return getMockRecipes(page, limit);
+    }
   }
 }
 

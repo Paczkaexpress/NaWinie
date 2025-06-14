@@ -1,5 +1,8 @@
 import type { RecipeListItemDto, PaginatedRecipesDto, IngredientDto, PaginatedIngredientsDto } from '../types';
 
+// Sample base64 encoded 1x1 pixel images for mock data
+const sampleImageData = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=';
+
 const mockRecipes: RecipeListItemDto[] = [
   {
     id: '1',
@@ -11,6 +14,7 @@ const mockRecipes: RecipeListItemDto[] = [
     total_votes: 23,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    image_data: sampleImageData,
   },
   {
     id: '2',
@@ -22,6 +26,7 @@ const mockRecipes: RecipeListItemDto[] = [
     total_votes: 15,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    image_data: sampleImageData,
   },
   {
     id: '3',
@@ -33,6 +38,7 @@ const mockRecipes: RecipeListItemDto[] = [
     total_votes: 42,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    image_data: sampleImageData,
   },
   {
     id: '4',
@@ -44,6 +50,7 @@ const mockRecipes: RecipeListItemDto[] = [
     total_votes: 18,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
+    image_data: sampleImageData,
   },
 ];
 
