@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useRecipeDetail, useAuth } from '../hooks';
 import type { RecipeRatingDto } from '../types';
+import { useToast } from './ToastProvider';
 
 // Component imports
 import BackButton from './BackButton';
@@ -19,11 +20,13 @@ interface RecipeDetailPageProps {
 export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDetailPageProps) {
   const { recipe, isLoading, error, retry } = useRecipeDetail(recipeId);
   const { isAuthenticated } = useAuth();
+  const { addToast } = useToast();
   const [currentRating, setCurrentRating] = useState<RecipeRatingDto | null>(null);
 
   const handleRatingSubmitted = useCallback((rating: RecipeRatingDto) => {
     setCurrentRating(rating);
-  }, []);
+    addToast('Dziękujemy za ocenę przepisu!', 'success');
+  }, [addToast]);
 
   const handleRetry = useCallback(() => {
     retry();
@@ -225,10 +228,13 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
         <p className="text-gray-600 mb-4">
           Udostępnij go swoim znajomym!
         </p>
-        <button
-          onClick={() => navigator.clipboard.writeText(window.location.href)}
-          className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200"
-        >
+                 <button
+           onClick={() => {
+             navigator.clipboard.writeText(window.location.href);
+             addToast('Link do przepisu został skopiowany!', 'success');
+           }}
+           className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200"
+         >
           <svg 
             className="w-4 h-4 mr-2" 
             fill="none" 

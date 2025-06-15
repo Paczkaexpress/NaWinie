@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import RecipeDetailPage from '../../components/RecipeDetailPage';
+import RecipeDetailPageWithErrorBoundary from '../../components/RecipeDetailPageWithErrorBoundary';
 
 const { id } = Astro.params;
 
@@ -22,7 +22,7 @@ const description = `Sprawdź szczegóły przepisu, składniki i sposób przygot
 
 <Layout title={title} description={description}>
   <main>
-    <RecipeDetailPage recipeId={id} client:load />
+    <RecipeDetailPageWithErrorBoundary recipeId={id} client:load />
   </main>
 </Layout>
 
