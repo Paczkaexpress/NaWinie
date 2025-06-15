@@ -56,6 +56,53 @@ const handlers = [
       pagination: { page: 1, limit: 12, total_items: 1, total_pages: 1 },
     });
   }),
+  http.get(`/api/recipes/:id`, () => {
+    return HttpResponse.json({
+      id: '550e8400-e29b-41d4-a716-446655440000',
+      name: 'Spaghetti Carbonara',
+      preparation_time_minutes: 20,
+      complexity_level: 'medium',
+      author_id: 'author-123',
+      average_rating: 4.5,
+      total_votes: 120,
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z',
+      steps: [
+        { step: 1, description: 'Ugotuj makaron al dente' },
+        { step: 2, description: 'Przygotuj sos carbonara' },
+        { step: 3, description: 'Wymieszaj makaron z sosem' }
+      ],
+      ingredients: [
+        {
+          recipe_id: '550e8400-e29b-41d4-a716-446655440000',
+          ingredient_id: 'ingredient-1',
+          amount: 400,
+          is_optional: false,
+          substitute_recommendation: null,
+          name: 'Spaghetti',
+          unit_type: 'g'
+        },
+        {
+          recipe_id: '550e8400-e29b-41d4-a716-446655440000',
+          ingredient_id: 'ingredient-2',
+          amount: 4,
+          is_optional: false,
+          substitute_recommendation: null,
+          name: 'Jajka',
+          unit_type: 'szt'
+        },
+        {
+          recipe_id: '550e8400-e29b-41d4-a716-446655440000',
+          ingredient_id: 'ingredient-3',
+          amount: 100,
+          is_optional: true,
+          substitute_recommendation: 'Boczek pancetta',
+          name: 'Guanciale',
+          unit_type: 'g'
+        }
+      ]
+    });
+  }),
 ];
 
 export const server = setupServer(...handlers);

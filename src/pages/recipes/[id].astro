@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import RecipeDetailPageWithErrorBoundary from '../../components/RecipeDetailPageWithErrorBoundary';
+import ToastProvider from '../../components/ToastProvider';
 
 const { id } = Astro.params;
 
@@ -20,9 +21,11 @@ const title = `Szczegóły przepisu - Na Winie`;
 const description = `Sprawdź szczegóły przepisu, składniki i sposób przygotowania.`;
 ---
 
-<Layout title={title} description={description}>
+<Layout title={title}>
   <main>
-    <RecipeDetailPageWithErrorBoundary recipeId={id} client:load />
+    <ToastProvider client:only="react">
+      <RecipeDetailPageWithErrorBoundary recipeId={id} />
+    </ToastProvider>
   </main>
 </Layout>
 

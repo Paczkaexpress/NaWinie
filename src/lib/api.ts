@@ -1,6 +1,7 @@
 import type {
   PaginatedIngredientsDto,
   PaginatedRecipesDto,
+  RecipeDetailDto,
 } from "../types";
 
 interface FetchOptions extends RequestInit {
@@ -198,7 +199,7 @@ export async function findRecipesByIngredients(
 }
 
 import { supabase } from './supabaseClient';
-import { getMockRecipes, getMockIngredients } from './mockData';
+import { getMockRecipes, getMockIngredients, getMockRecipeById } from './mockData';
 
 export async function getRecipes(page = 1, limit = 10): Promise<PaginatedRecipesDto> {
   try {
@@ -240,6 +241,80 @@ export async function getRecipes(page = 1, limit = 10): Promise<PaginatedRecipes
       console.error('Error fetching recipes from Supabase, using mock data:', supabaseError);
       // Return mock data as final fallback
       return getMockRecipes(page, limit);
+    }
+  }
+}
+
+export async function getRecipeById(id: string, options?: FetchOptions): Promise<RecipeDetailDto> {
+  try {
+    // Try HTTP API first (for testing with MSW or local backend)
+    const url = new URL(`${API_BASE_URL}/recipes/${id}`);
+    
+    return await fetchWithRetry<RecipeDetailDto>(url.toString(), options);
+  } catch (error) {
+    console.error('Error fetching recipe from HTTP API, trying Supabase:', error);
+    
+    try {
+      // Fallback to Supabase
+      const { data: recipe, error: recipeError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (recipeError) throw recipeError;
+
+      if (!recipe) {
+        throw new Error('Recipe not found');
+      }
+
+      // Get ingredients for this recipe
+      const { data: ingredients, error: ingredientsError } = await supabase
+        .from('recipe_ingredients')
+        .select(`
+          recipe_id,
+          ingredient_id,
+          amount,
+          is_optional,
+          substitute_recommendation,
+          ingredients!inner (
+            name,
+            unit_type
+          )
+        `)
+        .eq('recipe_id', id);
+
+      if (ingredientsError) throw ingredientsError;
+
+      // Get steps for this recipe
+      const { data: steps, error: stepsError } = await supabase
+        .from('recipe_steps')
+        .select('*')
+        .eq('recipe_id', id)
+        .order('step', { ascending: true });
+
+      if (stepsError) throw stepsError;
+
+      // Transform the data to match RecipeDetailDto
+      const recipeDetail: RecipeDetailDto = {
+        ...recipe,
+        steps: steps || [],
+        ingredients: ingredients?.map(ing => ({
+          recipe_id: ing.recipe_id,
+          ingredient_id: ing.ingredient_id,
+          amount: ing.amount,
+          is_optional: ing.is_optional,
+          substitute_recommendation: ing.substitute_recommendation,
+          name: (ing.ingredients as any)?.name || '',
+          unit_type: (ing.ingredients as any)?.unit_type || 'g'
+        })) || []
+      };
+
+      return recipeDetail;
+    } catch (supabaseError) {
+      console.error('Error fetching recipe from Supabase, using mock data:', supabaseError);
+      // Return mock data as final fallback
+      return getMockRecipeById(id);
     }
   }
 }

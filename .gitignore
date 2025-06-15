@@ -45,3 +45,7 @@ venv/
 # Database
 *.db
 *.sqlite3 
+
+# media files
+.jpg
+.png

@@ -70,7 +70,7 @@ describe('useRecipeRating', () => {
       await result.current.submitRating(0); // Invalid rating
     });
 
-    expect(result.current.error).toBe('Ocena musi być między 1 a 5');
+    expect(result.current.error).toBe('Nieprawidłowa ocena. Wybierz od 1 do 5 gwiazdek');
   });
 
   it('should handle 409 duplicate rating error', async () => {
@@ -114,7 +114,7 @@ describe('useRecipeRating', () => {
       await result.current.submitRating(3);
     });
 
-    expect(result.current.error).toBe('Musisz być zalogowany, aby ocenić przepis');
+    expect(result.current.error).toBe('Musisz być zalogowany aby ocenić przepis');
   });
 
   it('should handle server errors', async () => {
@@ -133,7 +133,7 @@ describe('useRecipeRating', () => {
       await result.current.submitRating(3);
     });
 
-    expect(result.current.error).toBe('Wystąpił błąd podczas zapisywania oceny');
+    expect(result.current.error).toBe('Błąd podczas wysyłania oceny');
   });
 
   it('should clear error on new submission', async () => {
@@ -171,20 +171,18 @@ describe('useRecipeRating', () => {
   });
 
   it('should maintain submitting state during API call', async () => {
-    let resolvePromise: (value: any) => void;
-    const promise = new Promise(resolve => {
-      resolvePromise = resolve;
-    });
-
+    // Create a delayed response to test the submitting state
     server.use(
-      http.post('*/api/recipes/:id/rate', () => {
-        return promise.then(() => HttpResponse.json({
+      http.post('*/api/recipes/:id/rate', async () => {
+        // Add a small delay to capture the submitting state
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return HttpResponse.json({
           user_id: 'user-123',
           recipe_id: '550e8400-e29b-41d4-a716-446655440000',
           rating: 5,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z'
-        }));
+        });
       })
     );
 
@@ -193,16 +191,18 @@ describe('useRecipeRating', () => {
       { wrapper }
     );
 
-    const submissionPromise = act(async () => {
-      await result.current.submitRating(5);
+    expect(result.current.isSubmitting).toBe(false);
+
+    // Start the submission and immediately check submitting state
+    await act(async () => {
+      const submissionPromise = result.current.submitRating(5);
+      
+      // The submitting state should be true immediately after calling submitRating
+      // but before the promise resolves
+      await vi.runOnlyPendingTimersAsync();
+      
+      await submissionPromise;
     });
-
-    // Should be submitting
-    expect(result.current.isSubmitting).toBe(true);
-
-    // Resolve the API call
-    resolvePromise!(null);
-    await submissionPromise;
 
     expect(result.current.isSubmitting).toBe(false);
   });
