@@ -116,6 +116,8 @@ export type RecipeDetailDto = Omit<Recipes, 'steps'> & {
   steps: RecipeStep[];
   ingredients: RecipeIngredientDto[];
   image_data?: string; // Base64 encoded image data
+  average_rating?: number;
+  total_votes?: number;
 };
 
 /** Command model for updating an existing recipe (allows partial updates). */
