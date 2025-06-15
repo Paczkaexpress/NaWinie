@@ -16,7 +16,7 @@ export function useRecipeRating(): UseRecipeRatingReturn {
 
   const submitRating = async (recipeId: string, rating: number): Promise<RecipeRatingDto | null> => {
     // Check if user is authenticated
-    if (!user || !token) {
+    if (!user) {
       setError('You must be logged in to rate recipes');
       return null;
     }
@@ -31,6 +31,13 @@ export function useRecipeRating(): UseRecipeRatingReturn {
     setError(null);
 
     try {
+      // Get current session for authentication token
+      const session = await authService.getSession();
+      if (!session?.access_token) {
+        setError('Authentication session expired. Please log in again.');
+        return null;
+      }
+
       console.log('⭐ Submitting rating via API:', {
         recipeId,
         rating,
@@ -41,7 +48,7 @@ export function useRecipeRating(): UseRecipeRatingReturn {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ rating })
       });
