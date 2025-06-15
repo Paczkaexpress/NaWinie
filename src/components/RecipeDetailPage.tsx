@@ -1,7 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useRecipeDetail, useAuth } from '../hooks';
 import type { RecipeRatingDto } from '../types';
-// import { useToast } from './ToastProvider'; // Temporarily disabled
 
 // Component imports
 import BackButton from './BackButton';
@@ -17,16 +16,48 @@ interface RecipeDetailPageProps {
   className?: string;
 }
 
+// Simple client-side toast component
+const ClientToast: React.FC<{ message: string; type: 'success' | 'error'; onClose: () => void }> = ({ message, type, onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 5000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed top-4 right-4 z-50">
+      <div
+        className={`${
+          type === 'success' ? 'bg-green-600' : 'bg-red-600'
+        } px-4 py-2 rounded shadow text-white transition-opacity cursor-pointer`}
+        onClick={onClose}
+      >
+        {message}
+      </div>
+    </div>
+  );
+};
+
 export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDetailPageProps) {
   const { recipe, isLoading, error, retry } = useRecipeDetail(recipeId);
   const { isAuthenticated } = useAuth();
-  // const { addToast } = useToast(); // Temporarily disabled
   const [currentRating, setCurrentRating] = useState<RecipeRatingDto | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Safe toast function that works with SSR
+  const showToast = useCallback((message: string, type: 'success' | 'error' = 'success') => {
+    if (typeof window !== 'undefined') {
+      setToast({ message, type });
+    }
+  }, []);
+
+  const closeToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   const handleRatingSubmitted = useCallback((rating: RecipeRatingDto) => {
     setCurrentRating(rating);
-    // addToast('Dziękujemy za ocenę przepisu!', 'success'); // Temporarily disabled
-  }, []); // Removed addToast dependency
+    showToast('Dziękujemy za ocenę przepisu!', 'success');
+  }, [showToast]);
 
   const handleRetry = useCallback(() => {
     retry();
@@ -231,7 +262,7 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
                  <button
            onClick={() => {
              navigator.clipboard.writeText(window.location.href);
-             // addToast('Link do przepisu został skopiowany!', 'success'); // Temporarily disabled
+             showToast('Link do przepisu został skopiowany!', 'success');
            }}
            className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200"
          >
@@ -252,6 +283,15 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
           Skopiuj link
         </button>
       </div>
+
+      {/* Client-side toast */}
+      {toast && (
+        <ClientToast
+          message={toast.message}
+          type={toast.type}
+          onClose={closeToast}
+        />
+      )}
     </div>
   );
 } 

@@ -9,11 +9,6 @@ interface RecipeImageProps {
 export default function RecipeImage({ imageData, recipeName, className = '' }: RecipeImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  
-  // Debug logging
-  console.log('🖼️ RecipeImage: imageData type:', typeof imageData);
-  console.log('🖼️ RecipeImage: imageData length:', imageData?.length);
-  console.log('🖼️ RecipeImage: imageData preview:', imageData?.substring(0, 100));
 
   const handleImageLoad = () => {
     setIsLoading(false);
