@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { authService } from '../lib/auth';
 import type { RateRecipeCommand, RecipeRatingDto } from '../types';
 
 export type RecipeRatingState = {
@@ -25,13 +26,19 @@ export function useRecipeRating(recipeId: string) {
     try {
       setState(prev => ({ ...prev, isSubmitting: true, error: null }));
       
+      // Get current session for authentication
+      const session = await authService.getSession();
+      if (!session?.access_token) {
+        throw new Error('Musisz być zalogowany aby ocenić przepis');
+      }
+      
       const command: RateRecipeCommand = { rating };
       
       const response = await fetch(`/api/recipes/${recipeId}/rate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Authorization': `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(command),
       });

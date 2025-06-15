@@ -1,14 +1,10 @@
 import type { APIRoute } from 'astro';
 import type { RateRecipeCommand, RecipeRatingDto } from '../../../../types';
+import { getRecipeById } from '../../../../lib/api';
 
 // Mock user ratings storage - replace with actual database
 const userRatings: Record<string, Record<string, number>> = {};
-const recipeRatings: Record<string, { total_votes: number; sum_ratings: number }> = {
-  '550e8400-e29b-41d4-a716-446655440000': {
-    total_votes: 23,
-    sum_ratings: 103.5 // 23 votes with 4.5 average
-  }
-};
+const recipeRatings: Record<string, { total_votes: number; sum_ratings: number }> = {};
 
 function validateUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -26,6 +22,25 @@ function extractUserIdFromToken(authHeader: string): string | null {
     return 'user-123e4567-e89b-12d3-a456-426614174000';
   } catch {
     return null;
+  }
+}
+
+async function ensureRecipeExists(recipeId: string): Promise<boolean> {
+  try {
+    const recipe = await getRecipeById(recipeId);
+    
+    // Initialize rating data if recipe exists and not already in cache
+    if (recipe && !recipeRatings[recipeId]) {
+      recipeRatings[recipeId] = {
+        total_votes: recipe.total_votes || 0,
+        sum_ratings: (recipe.total_votes || 0) * (recipe.average_rating || 0)
+      };
+    }
+    
+    return !!recipe;
+  } catch (error) {
+    console.error('Error checking recipe existence:', error);
+    return false;
   }
 }
 
@@ -103,8 +118,9 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // Check if recipe exists
-    if (!recipeRatings[id]) {
+    // Check if recipe exists using the same method as recipe detail API
+    const recipeExists = await ensureRecipeExists(id);
+    if (!recipeExists) {
       return new Response(
         JSON.stringify({
           detail: 'Recipe not found'
@@ -190,7 +206,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       }),
       {
         status: 500,
-        headers: {
+      headers: {
           'Content-Type': 'application/json',
         },
       }
