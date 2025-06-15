@@ -254,6 +254,89 @@ export async function getRecipes(page = 1, limit = 10): Promise<PaginatedRecipes
   }
 }
 
+export async function searchRecipes(
+  searchQuery: string,
+  page = 1,
+  limit = 10,
+  options?: FetchOptions
+): Promise<PaginatedRecipesDto> {
+  if (!searchQuery || searchQuery.trim().length === 0) {
+    return getRecipes(page, limit);
+  }
+
+  const trimmedQuery = searchQuery.trim();
+
+  // Only try local backend if explicitly enabled
+  if (USE_LOCAL_BACKEND) {
+    try {
+      const url = new URL(`${API_BASE_URL}/recipes`);
+      url.searchParams.set('page', page.toString());
+      url.searchParams.set('limit', limit.toString());
+      url.searchParams.set('search', trimmedQuery);
+      
+      return await fetchWithRetry<PaginatedRecipesDto>(url.toString(), options);
+    } catch (error) {
+      console.error('Error searching recipes from HTTP API, trying Supabase:', error);
+    }
+  }
+  
+  try {
+    // Fallback to Supabase with text search
+    let supabaseQuery = supabase
+      .from('recipes')
+      .select('*', { count: 'exact' });
+
+    // Add search filter
+    if (trimmedQuery.length >= 2) {
+      supabaseQuery = supabaseQuery.ilike('name', `%${trimmedQuery}%`);
+    }
+
+    // Get count first
+    const { count } = await supabaseQuery;
+
+    // Get the actual data with pagination
+    const { data, error: supabaseError } = await supabaseQuery
+      .order('average_rating', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (supabaseError) throw supabaseError;
+
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    return {
+      data: data || [],
+      pagination: {
+        page,
+        limit,
+        total_items: count || 0,
+        total_pages: totalPages
+      }
+    };
+  } catch (supabaseError) {
+    console.error('Error searching recipes from Supabase, using mock data:', supabaseError);
+    // Filter mock data by search query
+    const mockData = getMockRecipes(1, 100); // Get all mock recipes
+    const filteredData = mockData.data.filter(recipe =>
+      recipe.name.toLowerCase().includes(trimmedQuery.toLowerCase())
+    );
+    
+    const totalPages = Math.ceil(filteredData.length / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+
+    return {
+      data: paginatedData,
+      pagination: {
+        page,
+        limit,
+        total_items: filteredData.length,
+        total_pages: totalPages
+      }
+    };
+  }
+}
+
 export async function getRecipeById(id: string, options?: FetchOptions): Promise<RecipeDetailDto> {
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
