@@ -25,10 +25,15 @@ export const useAddRecipeForm = (): UseAddRecipeFormReturn => {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const updateFormData = useCallback((updates: Partial<CreateRecipeFormData>) => {
-    setFormData(prev => ({
-      ...prev,
-      ...updates,
-    }));
+    console.log('updateFormData called with:', updates);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        ...updates,
+      };
+      console.log('updateFormData - new formData:', newData);
+      return newData;
+    });
     
     // Clear submit error when user makes changes
     if (submitError) {

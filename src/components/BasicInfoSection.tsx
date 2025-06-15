@@ -8,9 +8,9 @@ export interface BasicInfoSectionProps {
   };
   onChange: (field: string, value: any) => void;
   errors: {
-    name?: string;
-    preparation_time_minutes?: string;
-    complexity_level?: string;
+    name?: string | null;
+    preparation_time_minutes?: string | null;
+    complexity_level?: string | null;
   };
 }
 
@@ -24,6 +24,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
     { value: 'medium', label: 'Średni' },
     { value: 'hard', label: 'Trudny' }
   ];
+
+  console.log('BasicInfoSection values:', values);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -87,8 +89,18 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             </label>
             <select
               id="complexityLevel"
-              value={values.complexity_level || 'easy'}
-              onChange={(e) => onChange('complexity_level', e.target.value as 'easy' | 'medium' | 'hard')}
+              key={`complexity-${values.complexity_level}`}
+              defaultValue={values.complexity_level || 'easy'}
+              onChange={(e) => {
+                console.log('Select onChange triggered!');
+                console.log('Event target value:', e.target.value);
+                console.log('Event target selectedIndex:', e.target.selectedIndex);
+                
+                const selectedValue = e.target.value as 'easy' | 'medium' | 'hard';
+                console.log('Complexity level changed to:', selectedValue);
+                
+                onChange('complexity_level', selectedValue);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               {complexityOptions.map(option => (
