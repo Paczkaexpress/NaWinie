@@ -90,8 +90,9 @@ interface RatingDisplayProps {
 export const RatingDisplay = memo(function RatingDisplay({ averageRating, totalVotes, className = '' }: RatingDisplayProps) {
   const stars = useMemo(() => {
     const starElements = [];
-    const fullStars = Math.floor(averageRating);
-    const hasHalfStar = averageRating % 1 >= 0.5;
+    const rating = averageRating ?? 0;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
     
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
@@ -148,7 +149,9 @@ export const RatingDisplay = memo(function RatingDisplay({ averageRating, totalV
   }, [averageRating]);
 
   const voteText = useMemo(() => {
-    return `${averageRating.toFixed(1)} (${totalVotes} ${totalVotes === 1 ? 'ocena' : 'ocen'})`;
+    const rating = averageRating ?? 0;
+    const votes = totalVotes ?? 0;
+    return `${rating.toFixed(1)} (${votes} ${votes === 1 ? 'ocena' : 'ocen'})`;
   }, [averageRating, totalVotes]);
 
   return (

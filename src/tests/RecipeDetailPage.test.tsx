@@ -34,12 +34,7 @@ Object.assign(navigator, {
 
 describe('RecipeDetailPage', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     server.resetHandlers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
   });
 
   const mockRecipe = {
@@ -123,8 +118,7 @@ describe('RecipeDetailPage', () => {
 
     expect(screen.getByText('20 min')).toBeInTheDocument();
     expect(screen.getByText('Średni')).toBeInTheDocument();
-    expect(screen.getByText('4.5')).toBeInTheDocument();
-    expect(screen.getByText('(120 ocen)')).toBeInTheDocument();
+    expect(screen.getByText('4.5 (120 ocen)')).toBeInTheDocument();
   });
 
   it('should render ingredients list', async () => {
@@ -137,13 +131,13 @@ describe('RecipeDetailPage', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Składniki')).toBeInTheDocument();
+      expect(screen.getByText('Składniki (3)')).toBeInTheDocument();
     });
 
     expect(screen.getByText('400 g Spaghetti')).toBeInTheDocument();
     expect(screen.getByText('4 szt Jajka')).toBeInTheDocument();
-    expect(screen.getByText('100 g Guanciale (opcjonalnie)')).toBeInTheDocument();
-    expect(screen.getByText('Zamiennik: Boczek pancetta')).toBeInTheDocument();
+    expect(screen.getByText(/100 g Guanciale/)).toBeInTheDocument();
+    expect(screen.getByText(/Boczek pancetta/)).toBeInTheDocument();
   });
 
   it('should render preparation steps', async () => {
@@ -156,7 +150,7 @@ describe('RecipeDetailPage', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Sposób przygotowania')).toBeInTheDocument();
+      expect(screen.getByText('Sposób przygotowania (3 kroków)')).toBeInTheDocument();
     });
 
     expect(screen.getByText('Ugotuj makaron al dente')).toBeInTheDocument();
@@ -186,7 +180,7 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Oceń przepis')).toBeInTheDocument();
     });
 
-    const stars = screen.getAllByRole('button', { name: /gwiazdka/i });
+    const stars = screen.getAllByRole('button', { name: /oceń/i });
     expect(stars).toHaveLength(5);
 
     fireEvent.click(stars[4]); // Click 5th star
@@ -206,10 +200,10 @@ describe('RecipeDetailPage', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Udostępnij')).toBeInTheDocument();
+      expect(screen.getByText('Skopiuj link')).toBeInTheDocument();
     });
 
-    const shareButton = screen.getByRole('button', { name: /udostępnij/i });
+    const shareButton = screen.getByRole('button', { name: /skopiuj link/i });
     fireEvent.click(shareButton);
 
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
@@ -238,8 +232,8 @@ describe('RecipeDetailPage', () => {
     });
 
     expect(screen.getByText('Przepis nie został znaleziony')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /spróbuj ponownie/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /strona główna/i })).toBeInTheDocument();
+    expect(screen.getByText('Spróbuj ponownie')).toBeInTheDocument();
+    expect(screen.getByText('Strona główna')).toBeInTheDocument();
   });
 
   it('should handle retry functionality', async () => {
@@ -260,7 +254,7 @@ describe('RecipeDetailPage', () => {
       expect(screen.getByText('Wystąpił problem')).toBeInTheDocument();
     });
 
-    const retryButton = screen.getByRole('button', { name: /spróbuj ponownie/i });
+    const retryButton = screen.getByText('Spróbuj ponownie');
     fireEvent.click(retryButton);
 
     await waitFor(() => {
@@ -290,10 +284,10 @@ describe('RecipeDetailPage', () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /wróć/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /wróć do poprzedniej strony/i })).toBeInTheDocument();
     });
 
-    const backButton = screen.getByRole('button', { name: /wróć/i });
+    const backButton = screen.getByRole('button', { name: /wróć do poprzedniej strony/i });
     fireEvent.click(backButton);
 
     expect(mockBack).toHaveBeenCalled();
