@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRecipeRating } from '../hooks/useRecipeRating';
+import { useRecipeRatingLegacy } from '../hooks/useRecipeRating';
 import { useAuth } from '../hooks/useAuth';
 import { getRecipeById } from '../lib/api';
 import type { RecipeDetailDto } from '../types';
@@ -14,29 +14,130 @@ import RatingComponent from './RatingComponent';
 import RecipeDetailSkeleton from './RecipeDetailSkeleton';
 
 interface RecipeDetailPageProps {
-  initialRecipe: RecipeDetailDto;
+  initialRecipe?: RecipeDetailDto;
+  recipeId?: string;
 }
 
-export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProps) {
-  const [recipe, setRecipe] = useState<RecipeDetailDto>(initialRecipe);
+export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDetailPageProps) {
+  const [recipe, setRecipe] = useState<RecipeDetailDto | null>(initialRecipe || null);
+  const [isLoading, setIsLoading] = useState(!initialRecipe);
+  const [error, setError] = useState<string | null>(null);
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [showRatingSuccess, setShowRatingSuccess] = useState(false);
+  const [showLinkCopied, setShowLinkCopied] = useState(false);
   
-  const { submitRating, isLoading: isSubmittingRating, error: ratingError } = useRecipeRating();
+  const { submitRating, isSubmitting: isSubmittingRating, error: ratingError } = useRecipeRatingLegacy();
   const { isAuthenticated, user } = useAuth();
 
+  // Load recipe data if recipeId is provided but no initialRecipe
+  useEffect(() => {
+    if (recipeId && !initialRecipe) {
+      const loadRecipe = async () => {
+        try {
+          setIsLoading(true);
+          setError(null);
+          const recipeData = await getRecipeById(recipeId);
+          setRecipe(recipeData);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Failed to load recipe');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      loadRecipe();
+    }
+  }, [recipeId, initialRecipe]);
+
+  // Show loading skeleton while data is loading
+  if (isLoading) {
+    return (
+      <div data-testid="recipe-detail-skeleton" className="max-w-4xl mx-auto px-4 py-8">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-20 mb-6"></div>
+          <div className="bg-white rounded-lg shadow-sm border overflow-hidden mb-6">
+            <div className="h-64 md:h-80 lg:h-96 bg-gray-200"></div>
+            <div className="p-6">
+              <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/2 mb-6"></div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+                <div className="h-4 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="text-center py-12">
+          <div className="text-red-600 mb-4">
+            <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Wystąpił problem</h2>
+          <p className="text-gray-600 mb-6">Przepis nie został znaleziony</p>
+          <div className="space-x-4">
+            <button
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                if (recipeId) {
+                  // Retry loading the recipe
+                  const loadRecipe = async () => {
+                    try {
+                      const recipeData = await getRecipeById(recipeId);
+                      setRecipe(recipeData);
+                    } catch (err) {
+                      console.error('Error loading recipe:', err);
+                      setError(err instanceof Error ? err.message : 'Failed to load recipe');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  };
+                  loadRecipe();
+                }
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Spróbuj ponownie
+            </button>
+            <a
+              href="/"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors inline-block"
+            >
+              Strona główna
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if recipe is null
+  if (!recipe) {
+    return null;
+  }
+
   const handleRatingSubmit = async () => {
-    if (!selectedRating) return;
+    if (!selectedRating || !recipe) return;
 
     const result = await submitRating(recipe.id, selectedRating);
     
     if (result) {
       // Update the local recipe state with the new rating data
-      setRecipe(prev => ({
+      setRecipe(prev => prev ? ({
         ...prev,
         average_rating: result.average_rating,
         total_votes: result.total_votes
-      }));
+      }) : prev);
       
       setShowRatingSuccess(true);
       setSelectedRating(null);
@@ -64,6 +165,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
             type="button"
             disabled={!interactive}
             onClick={() => onClick?.(star)}
+            aria-label={interactive ? `Oceń ${star} ${star === 1 ? 'gwiazdką' : 'gwiazdkami'}` : undefined}
             className={`
               ${interactive ? 'hover:scale-110 cursor-pointer' : 'cursor-default'}
               transition-all duration-200
@@ -103,7 +205,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
             d="M15 19l-7-7 7-7" 
           />
         </svg>
-        Back
+        Wróć do poprzedniej strony
       </button>
 
       {/* Recipe Header with Image */}
@@ -152,7 +254,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
                 {recipe.average_rating ? recipe.average_rating.toFixed(1) : '0.0'}
               </span>
               <span className="text-sm text-gray-500">
-                ({recipe.total_votes || 0} {recipe.total_votes === 1 ? 'vote' : 'votes'})
+                ({recipe.total_votes || 0} {recipe.total_votes === 1 ? 'ocena' : 'ocen'})
               </span>
             </div>
           </div>
@@ -171,11 +273,13 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
               </svg>
               <span><span className="font-medium">Difficulty:</span>{' '}
                 <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  recipe?.difficulty_level === 'easy' ? 'bg-green-100 text-green-800' :
-                  recipe?.difficulty_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                  (recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'bg-green-100 text-green-800' :
+                  (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {recipe?.difficulty_level || 'unknown'}
+                  {(recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'Łatwy' : 
+                   (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'Średni' : 
+                   (recipe?.difficulty_level === 'hard' || recipe?.complexity_level === 'hard') ? 'Trudny' : 'nieznany'}
                 </span>
               </span>
             </div>
@@ -201,7 +305,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <p className="text-green-800 font-medium">Thank you for your rating!</p>
+            <p className="text-green-800 font-medium">Dziękujemy za ocenę przepisu!</p>
           </div>
         </div>
       )}
@@ -214,7 +318,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
             <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
-            Ingredients
+            Składniki ({recipe.ingredients?.length || 0})
           </h2>
           <ul className="space-y-3">
             {recipe.ingredients && recipe.ingredients.length > 0 ? (
@@ -249,7 +353,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
               <svg className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
               </svg>
-              Rate this recipe
+              Oceń przepis
             </h3>
             
             {ratingError && (
@@ -308,7 +412,7 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
           <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          Instructions
+          Sposób przygotowania ({recipe.steps?.length || 0} kroków)
         </h2>
         <ol className="space-y-4">
           {recipe.steps && recipe.steps.length > 0 ? (
@@ -353,29 +457,24 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
       {/* Share Section */}
       <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
         <h3 className="text-lg font-semibold text-gray-900 mb-3">
-          Love this recipe?
+          Podoba Ci się ten przepis?
         </h3>
         <p className="text-gray-600 mb-4">
-          Share it with your friends and family!
+          Podziel się nim z rodziną i przyjaciółmi!
         </p>
         <button
-          onClick={() => {
+          onClick={async () => {
             if (navigator.clipboard && window.location) {
-              navigator.clipboard.writeText(window.location.href).then(() => {
-                // Show a temporary success message
-                const button = document.activeElement as HTMLButtonElement;
-                const originalText = button.textContent;
-                button.textContent = 'Link copied!';
-                button.className = button.className.replace('bg-orange-600 hover:bg-orange-700', 'bg-green-600');
-                setTimeout(() => {
-                  button.textContent = originalText;
-                  button.className = button.className.replace('bg-green-600', 'bg-orange-600 hover:bg-orange-700');
-                }, 2000);
-              }).catch(() => {
-                alert('Could not copy link. Please copy the URL manually.');
-              });
+              try {
+                await navigator.clipboard.writeText(window.location.href);
+                // Show success message by updating state
+                setShowLinkCopied(true);
+                setTimeout(() => setShowLinkCopied(false), 3000);
+              } catch (error) {
+                alert('Nie można skopiować linku. Proszę skopiować URL ręcznie.');
+              }
             } else {
-              alert('Could not copy link. Please copy the URL manually.');
+              alert('Nie można skopiować linku. Proszę skopiować URL ręcznie.');
             }
           }}
           className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-colors duration-200"
@@ -394,8 +493,15 @@ export default function RecipeDetailPage({ initialRecipe }: RecipeDetailPageProp
               d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
             />
           </svg>
-          Copy Recipe Link
+          Skopiuj link
         </button>
+        
+        {/* Copy Link Success Message */}
+        {showLinkCopied && (
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 font-medium">Link do przepisu został skopiowany!</p>
+          </div>
+        )}
       </div>
     </div>
   );
