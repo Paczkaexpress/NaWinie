@@ -217,4 +217,84 @@ export type RecipeRatingState = {
   hasRated: boolean;
   currentUserRating?: number;
   isSubmitting: boolean;
+};
+
+// === Recipe Management View Types (new) ===
+
+/** Props for the main recipe management view */
+export type RecipeManagementViewProps = {
+  recipeId: string;
+  initialRecipe?: RecipeDetailDto;
+  currentUser: UserDto;
+};
+
+/** State for recipe management view */
+export type RecipeManagementState = {
+  recipe: RecipeDetailDto | null;
+  isLoading: boolean;
+  error: string | null;
+  isEditModalOpen: boolean;
+  isDeleting: boolean;
+  deleteConfirmOpen: boolean;
+};
+
+/** Props for recipe management header */
+export type RecipeHeaderProps = {
+  recipe: RecipeDetailDto;
+  isAuthor: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  onBack: () => void;
+};
+
+/** Props for recipe details section */
+export type RecipeDetailsSectionProps = {
+  recipe: RecipeDetailDto;
+  isEditable: boolean;
+};
+
+/** Props for recipe rating section */
+export type RecipeRatingSectionProps = {
+  recipeId: string;
+  currentRating: RecipeRatingDto;
+  isAuthor: boolean;
+  hasUserRated: boolean;
+  onRatingSubmit: (rating: number) => Promise<void>;
+};
+
+/** State for rating component */
+export type RatingComponentState = {
+  selectedRating: number;
+  isSubmitting: boolean;
+  error: string | null;
+};
+
+/** Props for recipe edit modal */
+export type RecipeEditModalProps = {
+  isOpen: boolean;
+  recipe: RecipeDetailDto;
+  onSave: (data: UpdateRecipeCommand) => Promise<void>;
+  onCancel: () => void;
+};
+
+/** Form data for editing a recipe */
+export type EditRecipeFormData = {
+  name: string;
+  preparation_time_minutes: number;
+  complexity_level: 'easy' | 'medium' | 'hard';
+  steps: RecipeStepFormData[];
+  ingredients: RecipeIngredientFormData[];
+};
+
+/** Validation state for edit form */
+export type EditFormValidationState = {
+  name: string | null;
+  preparation_time_minutes: string | null;
+  complexity_level: string | null;
+  steps: Array<string | null>;
+  ingredients: Array<{
+    ingredient_id: string | null;
+    amount: string | null;
+  }>;
+  general: string | null;
 }; 

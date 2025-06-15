@@ -1,0 +1,50 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import RecipeManagementView from '../../../components/RecipeManagementView';
+import { authService } from '../../../lib/auth';
+
+// Get recipe ID from URL params
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/recipes');
+}
+
+// Server-side authentication check
+let user = null;
+try {
+  // Check if user is authenticated via session/cookies
+  const session = await authService.getSession();
+  if (!session?.user) {
+    const returnUrl = encodeURIComponent(`/recipes/${id}/manage`);
+    return Astro.redirect(`/auth?returnUrl=${returnUrl}`);
+  }
+  user = session.user;
+} catch (error) {
+  console.error('Auth check failed:', error);
+  const returnUrl = encodeURIComponent(`/recipes/${id}/manage`);
+  return Astro.redirect(`/auth?returnUrl=${returnUrl}`);
+}
+
+// Pre-fetch recipe data server-side (optional, can be done in component)
+let initialRecipe = null;
+try {
+  const response = await fetch(`${Astro.url.origin}/api/recipes/${id}`);
+  if (response.ok) {
+    initialRecipe = await response.json();
+  }
+} catch (error) {
+  console.error('Failed to pre-fetch recipe:', error);
+}
+---
+
+<Layout title={`Zarządzanie przepisem${initialRecipe ? ` - ${initialRecipe.name}` : ''}`}>
+  <main class="container mx-auto px-4 py-8">
+    <RecipeManagementView 
+      client:load
+      recipeId={id}
+      initialRecipe={initialRecipe}
+      currentUser={user}
+    />
+  </main>
+</Layout> 
