@@ -1,26 +1,42 @@
 import React from 'react';
 import type { RecipeIngredientFormData } from '../types';
 import { useIngredients } from '../hooks/useIngredients';
+import IngredientSearchInput from './IngredientSearchInput';
 
 export interface IngredientsSectionProps {
   ingredients: RecipeIngredientFormData[];
-  validationErrors: Array<{
-    ingredient_id: string | null;
-    amount: string | null;
-  }>;
-  onUpdateIngredient: (index: number, ingredient: Partial<RecipeIngredientFormData>) => void;
-  onAddIngredient: () => void;
-  onRemoveIngredient: (index: number) => void;
+  onIngredientsChange: (ingredients: RecipeIngredientFormData[]) => void;
+  errors: any;
 }
 
 const IngredientsSection: React.FC<IngredientsSectionProps> = ({
   ingredients,
-  validationErrors,
-  onUpdateIngredient,
-  onAddIngredient,
-  onRemoveIngredient
+  onIngredientsChange,
+  errors
 }) => {
-  const { ingredients: availableIngredients, loading: ingredientsLoading } = useIngredients();
+  const { loading: ingredientsLoading } = useIngredients();
+
+  const onAddIngredient = () => {
+    const newIngredient: RecipeIngredientFormData = {
+      ingredient_id: '',
+      amount: 0,
+      is_optional: false,
+      substitute_recommendation: null
+    };
+    onIngredientsChange([...ingredients, newIngredient]);
+  };
+
+  const onRemoveIngredient = (index: number) => {
+    const newIngredients = ingredients.filter((_, i) => i !== index);
+    onIngredientsChange(newIngredients);
+  };
+
+  const onUpdateIngredient = (index: number, updates: Partial<RecipeIngredientFormData>) => {
+    const newIngredients = ingredients.map((ingredient, i) => 
+      i === index ? { ...ingredient, ...updates } : ingredient
+    );
+    onIngredientsChange(newIngredients);
+  };
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -50,7 +66,7 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
       ) : (
         <div className="space-y-4">
           {ingredients.map((ingredient, index) => {
-            const errors = validationErrors[index] || { ingredient_id: null, amount: null };
+            const ingredientErrors = errors?.ingredients?.[index] || { ingredient_id: null, amount: null };
             
             return (
               <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
@@ -76,24 +92,13 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Składnik *
                     </label>
-                    <select
+                    <IngredientSearchInput
                       value={ingredient.ingredient_id}
-                      onChange={(e) => onUpdateIngredient(index, { ingredient_id: e.target.value })}
-                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.ingredient_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
-                      }`}
+                      onChange={(ingredientId) => onUpdateIngredient(index, { ingredient_id: ingredientId })}
+                      error={ingredientErrors.ingredient_id}
                       disabled={ingredientsLoading}
-                    >
-                      <option value="">Wybierz składnik</option>
-                                             {availableIngredients.map((ing: any) => (
-                         <option key={ing.id} value={ing.id}>
-                           {ing.name} ({ing.unit_type})
-                         </option>
-                       ))}
-                    </select>
-                    {errors.ingredient_id && (
-                      <p className="mt-1 text-sm text-red-600">{errors.ingredient_id}</p>
-                    )}
+                      placeholder="Wyszukaj składnik..."
+                    />
                   </div>
 
                   {/* Amount */}
@@ -108,12 +113,12 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                       min="0"
                       step="0.1"
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.amount ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                        ingredientErrors.amount ? 'border-red-300 bg-red-50' : 'border-gray-300'
                       }`}
                       placeholder="np. 250"
                     />
-                    {errors.amount && (
-                      <p className="mt-1 text-sm text-red-600">{errors.amount}</p>
+                    {ingredientErrors.amount && (
+                      <p className="mt-1 text-sm text-red-600">{ingredientErrors.amount}</p>
                     )}
                   </div>
                 </div>

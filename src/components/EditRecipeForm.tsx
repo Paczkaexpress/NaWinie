@@ -53,10 +53,13 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
       {/* Ingredients Section */}
       <IngredientsSection
         ingredients={formData.ingredients}
-        validationErrors={validationState.ingredients}
-        onUpdateIngredient={onUpdateIngredient}
-        onAddIngredient={onAddIngredient}
-        onRemoveIngredient={onRemoveIngredient}
+        onIngredientsChange={(ingredients) => {
+          // Convert individual ingredient updates to batch update
+          ingredients.forEach((ingredient, index) => {
+            onUpdateIngredient(index, ingredient);
+          });
+        }}
+        errors={{ ingredients: validationState.ingredients }}
       />
 
       {/* Steps Section */}

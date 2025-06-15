@@ -163,7 +163,6 @@ const AddRecipeForm: React.FC = () => {
         <IngredientsSection
           ingredients={formData.ingredients}
           onIngredientsChange={handleIngredientsChange}
-          availableIngredients={ingredients}
           errors={errors.ingredients}
         />
 

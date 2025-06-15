@@ -1,65 +1,52 @@
 import type { APIRoute } from 'astro';
+import { supabase } from '../../lib/supabaseClient';
 
 export const GET: APIRoute = async ({ request, url }) => {
   try {
     // Extract query parameters
     const searchParams = url.searchParams;
-    const page = searchParams.get('page') || '1';
-    const limit = searchParams.get('limit') || '100';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '100');
     const search = searchParams.get('search') || '';
     const sortBy = searchParams.get('sortBy') || 'name';
     const sortOrder = searchParams.get('sortOrder') || 'asc';
 
-    // Build backend URL
-    const backendUrl = new URL('/ingredients/', import.meta.env.BACKEND_URL || 'http://localhost:8000');
-    backendUrl.searchParams.set('page', page);
-    backendUrl.searchParams.set('limit', limit);
-    if (search) backendUrl.searchParams.set('search', search);
-    backendUrl.searchParams.set('sortBy', sortBy);
-    backendUrl.searchParams.set('sortOrder', sortOrder);
+    console.log('Fetching ingredients from Supabase with params:', { page, limit, search, sortBy, sortOrder });
 
-    console.log('Fetching ingredients from:', backendUrl.toString());
+    // Build Supabase query
+    let supabaseQuery = supabase
+      .from('ingredients')
+      .select('*', { count: 'exact' });
 
-    // Forward request to backend
-    const response = await fetch(backendUrl.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        // Forward authorization header if present
-        ...(request.headers.get('authorization') && {
-          'Authorization': request.headers.get('authorization')!
-        })
-      }
-    });
-
-    if (!response.ok) {
-      console.error('Backend ingredients API error:', response.status, response.statusText);
-      
-      // Return appropriate error response
-      if (response.status === 404) {
-        return new Response(JSON.stringify({ error: 'Ingredients API not found' }), {
-          status: 404,
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      return new Response(JSON.stringify({ error: 'Failed to fetch ingredients' }), {
-        status: response.status,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    // Add search filter if query is provided
+    if (search && search.length >= 2) {
+      supabaseQuery = supabaseQuery.ilike('name', `%${search}%`);
     }
 
-    const data = await response.json();
-    console.log('Ingredients fetched successfully:', data.items?.length || 0, 'items');
+    // Add sorting
+    const ascending = sortOrder === 'asc';
+    supabaseQuery = supabaseQuery.order(sortBy, { ascending });
 
-    // Transform backend response to match frontend types
+    // Add pagination
+    const { data, error: supabaseError, count } = await supabaseQuery
+      .range((page - 1) * limit, page * limit - 1);
+
+    if (supabaseError) {
+      console.error('Supabase ingredients API error:', supabaseError);
+      throw supabaseError;
+    }
+
+    const totalPages = Math.ceil((count || 0) / limit);
+
+    console.log('Ingredients fetched successfully from Supabase:', data?.length || 0, 'items');
+
     const transformedData = {
-      data: data.items || data.data || [],
+      data: data || [],
       pagination: {
-        page: data.page || 1,
-        limit: data.limit || 100,
-        total_items: data.total || 0,
-        total_pages: data.totalPages || data.total_pages || 1
+        page,
+        limit,
+        total_items: count || 0,
+        total_pages: totalPages
       }
     };
 

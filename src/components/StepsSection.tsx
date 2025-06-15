@@ -3,19 +3,35 @@ import type { RecipeStepFormData } from '../types';
 
 export interface StepsSectionProps {
   steps: RecipeStepFormData[];
-  validationErrors: Array<string | null>;
-  onUpdateStep: (index: number, step: Partial<RecipeStepFormData>) => void;
-  onAddStep: () => void;
-  onRemoveStep: (index: number) => void;
+  onStepsChange: (steps: RecipeStepFormData[]) => void;
+  errors: any;
 }
 
 const StepsSection: React.FC<StepsSectionProps> = ({
   steps,
-  validationErrors,
-  onUpdateStep,
-  onAddStep,
-  onRemoveStep
+  onStepsChange,
+  errors
 }) => {
+  const onAddStep = () => {
+    const newStep: RecipeStepFormData = {
+      step: steps.length + 1,
+      description: ''
+    };
+    onStepsChange([...steps, newStep]);
+  };
+
+  const onRemoveStep = (index: number) => {
+    const newSteps = steps.filter((_, i) => i !== index)
+      .map((step, i) => ({ ...step, step: i + 1 })); // Renumber steps
+    onStepsChange(newSteps);
+  };
+
+  const onUpdateStep = (index: number, updates: Partial<RecipeStepFormData>) => {
+    const newSteps = steps.map((step, i) => 
+      i === index ? { ...step, ...updates } : step
+    );
+    onStepsChange(newSteps);
+  };
   const moveStepUp = (index: number) => {
     if (index === 0) return;
     
@@ -66,7 +82,7 @@ const StepsSection: React.FC<StepsSectionProps> = ({
       ) : (
         <div className="space-y-4">
           {steps.map((step, index) => {
-            const error = validationErrors[index];
+            const error = errors?.steps?.[index];
             
             return (
               <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
