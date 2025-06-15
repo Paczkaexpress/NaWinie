@@ -297,14 +297,8 @@ export async function getRecipeById(id: string, options?: FetchOptions): Promise
 
     if (ingredientsError) throw ingredientsError;
 
-    // Get steps for this recipe
-    const { data: steps, error: stepsError } = await supabase
-      .from('recipe_steps')
-      .select('*')
-      .eq('recipe_id', id)
-      .order('step', { ascending: true });
-
-    if (stepsError) throw stepsError;
+    // Steps are already in the recipe object (stored directly in the recipes table)
+    // No need to query a separate recipe_steps table
 
     // Transform ingredients to match expected format
     const transformedIngredients = ingredients?.map((ri: any) => ({
@@ -317,10 +311,20 @@ export async function getRecipeById(id: string, options?: FetchOptions): Promise
       unit_type: ri.ingredients?.unit_type || 'g'
     })) || [];
 
+    // Convert steps from string array to proper step objects if needed
+    let processedSteps = recipe.steps || [];
+    if (processedSteps.length > 0 && typeof processedSteps[0] === 'string') {
+      // Convert string array to step objects
+      processedSteps = processedSteps.map((stepDescription: string, index: number) => ({
+        step: index + 1,
+        description: stepDescription
+      }));
+    }
+
     return {
       ...recipe,
       ingredients: transformedIngredients,
-      steps: steps || []
+      steps: processedSteps
     };
   } catch (supabaseError) {
     console.error('Error fetching recipe from Supabase, using mock data:', supabaseError);

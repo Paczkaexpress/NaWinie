@@ -47,5 +47,5 @@ venv/
 *.sqlite3 
 
 # media files
-.jpg
-.png
+*.jpg
+*.png

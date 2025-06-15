@@ -34,9 +34,49 @@ export const GET: APIRoute = async ({ params, request }) => {
     // Use the new API function that handles HTTP API -> Supabase -> mock data fallback
     const recipe = await getRecipeById(id);
 
+    // Debug: Log the recipe data to see what we're getting
+    console.log('Recipe data received:', {
+      name: recipe.name,
+      stepsType: typeof recipe.steps,
+      stepsValue: recipe.steps,
+      ingredientsType: typeof recipe.ingredients,
+      ingredientsLength: recipe.ingredients?.length,
+      ingredientsValue: recipe.ingredients
+    });
+
     // Validate recipe data completeness
-    if (!recipe.name || !recipe.steps || !recipe.ingredients) {
-      console.error(`Incomplete recipe data for ID: ${id}`);
+    if (!recipe.name) {
+      console.error(`Missing recipe name for ID: ${id}`);
+      return new Response(
+        JSON.stringify({
+          detail: 'Internal server error'
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    if (!recipe.steps || recipe.steps.length === 0) {
+      console.error(`Missing or empty steps for recipe ID: ${id}`);
+      return new Response(
+        JSON.stringify({
+          detail: 'Internal server error'
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+    }
+
+    if (!recipe.ingredients) {
+      console.error(`Missing ingredients for recipe ID: ${id}`);
       return new Response(
         JSON.stringify({
           detail: 'Internal server error'

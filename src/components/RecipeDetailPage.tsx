@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { useRecipeDetail, useAuth } from '../hooks';
 import type { RecipeRatingDto } from '../types';
-import { useToast } from './ToastProvider';
+// import { useToast } from './ToastProvider'; // Temporarily disabled
 
 // Component imports
 import BackButton from './BackButton';
@@ -18,15 +18,23 @@ interface RecipeDetailPageProps {
 }
 
 export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDetailPageProps) {
+  console.log('🎯 RecipeDetailPage: Component rendered with recipeId:', recipeId);
+  console.log('🎯 RecipeDetailPage: recipeId type:', typeof recipeId);
+  
   const { recipe, isLoading, error, retry } = useRecipeDetail(recipeId);
   const { isAuthenticated } = useAuth();
-  const { addToast } = useToast();
+  // const { addToast } = useToast(); // Temporarily disabled
   const [currentRating, setCurrentRating] = useState<RecipeRatingDto | null>(null);
+  
+  console.log('🎯 RecipeDetailPage: Hook state - isLoading:', isLoading, 'error:', error, 'recipe:', recipe?.name || 'null');
+  console.log('🎯 RecipeDetailPage: Recipe image_data type:', typeof recipe?.image_data);
+  console.log('🎯 RecipeDetailPage: Recipe image_data length:', recipe?.image_data?.length);
+  console.log('🎯 RecipeDetailPage: Recipe image_data preview:', recipe?.image_data?.substring(0, 100));
 
   const handleRatingSubmitted = useCallback((rating: RecipeRatingDto) => {
     setCurrentRating(rating);
-    addToast('Dziękujemy za ocenę przepisu!', 'success');
-  }, [addToast]);
+    // addToast('Dziękujemy za ocenę przepisu!', 'success'); // Temporarily disabled
+  }, []); // Removed addToast dependency
 
   const handleRetry = useCallback(() => {
     retry();
@@ -231,7 +239,7 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
                  <button
            onClick={() => {
              navigator.clipboard.writeText(window.location.href);
-             addToast('Link do przepisu został skopiowany!', 'success');
+             // addToast('Link do przepisu został skopiowany!', 'success'); // Temporarily disabled
            }}
            className="inline-flex items-center px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200"
          >

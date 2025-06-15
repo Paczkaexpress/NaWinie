@@ -90,6 +90,8 @@ export default function RecipeDetailPageWithErrorBoundary({
   recipeId, 
   className = '' 
 }: RecipeDetailPageWithErrorBoundaryProps) {
+  console.log('🛡️ RecipeDetailPageWithErrorBoundary: Rendering with recipeId:', recipeId);
+  
   const handleError = (error: Error, errorInfo: React.ErrorInfo) => {
     // Log error to monitoring service
     console.error('Recipe detail view error:', error, errorInfo);
