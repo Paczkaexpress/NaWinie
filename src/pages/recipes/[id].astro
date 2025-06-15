@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import RecipeDetailPageWithErrorBoundary from '../../components/RecipeDetailPageWithErrorBoundary';
 import ToastProvider from '../../components/ToastProvider';
+import UserAuth from '../../components/UserAuth';
 
 const { id } = Astro.params;
 
@@ -22,6 +23,23 @@ const description = `Sprawdź szczegóły przepisu, składniki i sposób przygot
 ---
 
 <Layout title={title}>
+  <!-- Header Section with Auth -->
+  <header class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg">
+    <div class="container mx-auto px-4 py-4">
+      <div class="flex items-center justify-between">
+        <div>
+          <a href="/" class="hover:text-white/80 transition-colors">
+            <h1 class="text-2xl md:text-3xl font-bold">Na Winie - Grab & Cook</h1>
+            <p class="text-sm md:text-base mt-1 opacity-90">Typ dania - przepisy i pomysły</p>
+          </a>
+        </div>
+        <div>
+          <UserAuth client:load />
+        </div>
+      </div>
+    </div>
+  </header>
+
   <main>
     <ToastProvider client:load>
       <RecipeDetailPageWithErrorBoundary recipeId={id} client:load />

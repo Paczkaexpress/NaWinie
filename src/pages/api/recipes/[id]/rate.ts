@@ -1,30 +1,114 @@
 import type { APIRoute } from 'astro';
 import type { RateRecipeCommand, RecipeRatingDto } from '../../../../types';
+import { getRecipeById } from '../../../../lib/api';
+import { supabase } from '../../../../lib/supabaseClient';
 
-// Mock user ratings storage - replace with actual database
+// Simple in-memory tracking of user ratings to prevent duplicates
 const userRatings: Record<string, Record<string, number>> = {};
-const recipeRatings: Record<string, { total_votes: number; sum_ratings: number }> = {
-  '550e8400-e29b-41d4-a716-446655440000': {
-    total_votes: 23,
-    sum_ratings: 103.5 // 23 votes with 4.5 average
-  }
-};
 
 function validateUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
-function extractUserIdFromToken(authHeader: string): string | null {
+async function extractUserIdFromToken(authHeader: string): Promise<string | null> {
   try {
-    // Basic token extraction - in real app, validate JWT properly
+    // Extract the token
     const token = authHeader.replace('Bearer ', '');
     if (!token) return null;
     
-    // Mock user ID extraction - replace with proper JWT validation
-    // For demo purposes, return a mock user ID
-    return 'user-123e4567-e89b-12d3-a456-426614174000';
+    // In a real Supabase app, we'd validate the JWT and extract the user ID
+    // For now, we'll decode it to get the user ID
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub ? `user-${payload.sub}` : null;
+    } catch {
+      // Fallback to mock user ID for demo purposes
+      return 'user-123e4567-e89b-12d3-a456-426614174000';
+    }
   } catch {
+    return null;
+  }
+}
+
+async function ensureRecipeExists(recipeId: string): Promise<boolean> {
+  try {
+    console.log('🔍 Checking if recipe exists:', recipeId);
+    const recipe = await getRecipeById(recipeId);
+    
+    if (recipe) {
+      console.log('✅ Recipe found:', {
+        id: recipe.id,
+        name: recipe.name,
+        averageRating: recipe.average_rating,
+        totalVotes: recipe.total_votes
+      });
+    } else {
+      console.log('❌ Recipe not found');
+    }
+    
+    return !!recipe;
+  } catch (error) {
+    console.error('❌ Error checking recipe existence:', error);
+    return false;
+  }
+}
+
+async function updateRecipeRating(recipeId: string, newRating: number): Promise<RecipeRatingDto | null> {
+  try {
+    // First, get the current recipe data
+    const { data: currentRecipe, error: fetchError } = await supabase
+      .from('recipes')
+      .select('average_rating, total_votes')
+      .eq('id', recipeId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching current recipe for rating update:', fetchError);
+      return null;
+    }
+
+    const currentAverage = currentRecipe.average_rating || 0;
+    const currentVotes = currentRecipe.total_votes || 0;
+
+    // Calculate new average
+    const newTotalVotes = currentVotes + 1;
+    const newSumRatings = (currentAverage * currentVotes) + newRating;
+    const newAverageRating = newSumRatings / newTotalVotes;
+
+    console.log('📊 Calculating new rating:', {
+      currentAverage,
+      currentVotes,
+      newRating,
+      newTotalVotes,
+      newAverageRating: Math.round(newAverageRating * 10) / 10
+    });
+
+    // Update the recipe in the database
+    const { data: updatedRecipe, error: updateError } = await supabase
+      .from('recipes')
+      .update({
+        average_rating: Math.round(newAverageRating * 10) / 10,
+        total_votes: newTotalVotes,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', recipeId)
+      .select('average_rating, total_votes')
+      .single();
+
+    if (updateError) {
+      console.error('Error updating recipe rating:', updateError);
+      return null;
+    }
+
+    console.log('✅ Recipe rating updated in database:', updatedRecipe);
+
+    return {
+      average_rating: updatedRecipe.average_rating,
+      total_votes: updatedRecipe.total_votes
+    };
+  } catch (error) {
+    console.error('❌ Error in updateRecipeRating:', error);
     return null;
   }
 }
@@ -69,7 +153,7 @@ export const POST: APIRoute = async ({ params, request }) => {
     );
   }
 
-  const userId = extractUserIdFromToken(authHeader);
+  const userId = await extractUserIdFromToken(authHeader);
   if (!userId) {
     return new Response(
       JSON.stringify({
@@ -104,7 +188,8 @@ export const POST: APIRoute = async ({ params, request }) => {
     }
 
     // Check if recipe exists
-    if (!recipeRatings[id]) {
+    const recipeExists = await ensureRecipeExists(id);
+    if (!recipeExists) {
       return new Response(
         JSON.stringify({
           detail: 'Recipe not found'
@@ -118,7 +203,7 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // Check if user already rated this recipe
+    // Check if user already rated this recipe (simple in-memory check)
     if (!userRatings[id]) {
       userRatings[id] = {};
     }
@@ -137,27 +222,26 @@ export const POST: APIRoute = async ({ params, request }) => {
       );
     }
 
-    // Add the rating
-    userRatings[id][userId] = body.rating;
+    console.log('⭐ Submitting rating:', {
+      recipeId: id,
+      userId: userId,
+      rating: body.rating
+    });
+
+    // Update the recipe rating in the database
+    const updatedRating = await updateRecipeRating(id, body.rating);
     
-    // Update recipe rating statistics
-    const currentStats = recipeRatings[id];
-    const newTotalVotes = currentStats.total_votes + 1;
-    const newSumRatings = currentStats.sum_ratings + body.rating;
-    const newAverageRating = newSumRatings / newTotalVotes;
+    if (!updatedRating) {
+      throw new Error('Failed to update recipe rating in database');
+    }
 
-    recipeRatings[id] = {
-      total_votes: newTotalVotes,
-      sum_ratings: newSumRatings
-    };
+    // Mark that this user has rated this recipe
+    userRatings[id][userId] = body.rating;
 
-    const result: RecipeRatingDto = {
-      average_rating: Math.round(newAverageRating * 10) / 10, // Round to 1 decimal place
-      total_votes: newTotalVotes
-    };
+    console.log('✅ Rating submitted successfully:', updatedRating);
 
     return new Response(
-      JSON.stringify(result),
+      JSON.stringify(updatedRating),
       {
         status: 200,
         headers: {

@@ -6,6 +6,7 @@ import RecipeDetailPage from '../components/RecipeDetailPage';
 import { ToastProvider } from '../components/ToastProvider';
 import { server } from './setup';
 import { http, HttpResponse } from 'msw';
+import * as apiModule from '../lib/api';
 
 // Mock the useAuth hook
 vi.mock('../hooks/useAuth', () => ({
@@ -14,6 +15,21 @@ vi.mock('../hooks/useAuth', () => ({
     user: { id: 'user-123' },
     token: 'mock-jwt-token'
   })
+}));
+
+// Mock the useRecipeRatingLegacy hook
+const mockSubmitRating = vi.fn();
+vi.mock('../hooks/useRecipeRating', () => ({
+  useRecipeRatingLegacy: () => ({
+    submitRating: mockSubmitRating,
+    isSubmitting: false,
+    error: null
+  })
+}));
+
+// Mock the API module to force it to use HTTP backend
+vi.mock('../lib/api', () => ({
+  getRecipeById: vi.fn()
 }));
 
 // Mock window.location
@@ -35,6 +51,26 @@ Object.assign(navigator, {
 describe('RecipeDetailPage', () => {
   beforeEach(() => {
     server.resetHandlers();
+    // Reset mocks
+    vi.clearAllMocks();
+    
+    // Set up rating mock default behavior
+    mockSubmitRating.mockResolvedValue({
+      average_rating: 4.6,
+      total_votes: 121
+    });
+    
+    // Get the mocked function
+    const mockGetRecipeById = vi.mocked(apiModule.getRecipeById);
+    
+    // Set up default mock implementation
+    mockGetRecipeById.mockImplementation(async (id: string) => {
+      // Return the mockRecipe data directly
+      if (id === '550e8400-e29b-41d4-a716-446655440000') {
+        return mockRecipe;
+      }
+      throw new Error('Recipe not found');
+    });
   });
 
   const mockRecipe = {
@@ -104,12 +140,6 @@ describe('RecipeDetailPage', () => {
   });
 
   it('should render recipe details after loading', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return HttpResponse.json(mockRecipe);
-      })
-    );
-
     renderComponent();
 
     await waitFor(() => {
@@ -118,16 +148,11 @@ describe('RecipeDetailPage', () => {
 
     expect(screen.getByText('20 min')).toBeInTheDocument();
     expect(screen.getByText('Średni')).toBeInTheDocument();
-    expect(screen.getByText('4.5 (120 ocen)')).toBeInTheDocument();
+    expect(screen.getByText('4.5')).toBeInTheDocument();
+    expect(screen.getByText('(120 ocen)')).toBeInTheDocument();
   });
 
   it('should render ingredients list', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return HttpResponse.json(mockRecipe);
-      })
-    );
-
     renderComponent();
 
     await waitFor(() => {
@@ -141,12 +166,6 @@ describe('RecipeDetailPage', () => {
   });
 
   it('should render preparation steps', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return HttpResponse.json(mockRecipe);
-      })
-    );
-
     renderComponent();
 
     await waitFor(() => {
@@ -159,21 +178,6 @@ describe('RecipeDetailPage', () => {
   });
 
   it('should handle rating submission', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return HttpResponse.json(mockRecipe);
-      }),
-      http.post('*/api/recipes/:id/rate', () => {
-        return HttpResponse.json({
-          user_id: 'user-123',
-          recipe_id: '550e8400-e29b-41d4-a716-446655440000',
-          rating: 5,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z'
-        });
-      })
-    );
-
     renderComponent();
 
     await waitFor(() => {
@@ -185,18 +189,22 @@ describe('RecipeDetailPage', () => {
 
     fireEvent.click(stars[4]); // Click 5th star
 
+    // Wait for rating to be selected
+    await waitFor(() => {
+      const submitButton = screen.getByRole('button', { name: /submit rating/i });
+      expect(submitButton).not.toBeDisabled();
+    });
+
+    // Click submit button
+    const submitButton = screen.getByRole('button', { name: /submit rating/i });
+    fireEvent.click(submitButton);
+
     await waitFor(() => {
       expect(screen.getByText('Dziękujemy za ocenę przepisu!')).toBeInTheDocument();
     });
   });
 
   it('should handle copy link functionality', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return HttpResponse.json(mockRecipe);
-      })
-    );
-
     renderComponent();
 
     await waitFor(() => {
@@ -216,14 +224,9 @@ describe('RecipeDetailPage', () => {
   });
 
   it('should handle 404 error', async () => {
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        return new HttpResponse(
-          JSON.stringify({ detail: 'Recipe not found' }),
-          { status: 404 }
-        );
-      })
-    );
+    // Mock API to throw an error for this test
+    const mockGetRecipeById = vi.mocked(apiModule.getRecipeById);
+    mockGetRecipeById.mockRejectedValueOnce(new Error('Recipe not found'));
 
     renderComponent('non-existent-id');
 
@@ -237,16 +240,16 @@ describe('RecipeDetailPage', () => {
   });
 
   it('should handle retry functionality', async () => {
+    const mockGetRecipeById = vi.mocked(apiModule.getRecipeById);
     let callCount = 0;
-    server.use(
-      http.get('*/api/recipes/:id', () => {
-        callCount++;
-        if (callCount === 1) {
-          return new HttpResponse(null, { status: 500 });
-        }
-        return HttpResponse.json(mockRecipe);
-      })
-    );
+    
+    mockGetRecipeById.mockImplementation(async () => {
+      callCount++;
+      if (callCount === 1) {
+        throw new Error('Server error');
+      }
+      return mockRecipe;
+    });
 
     renderComponent();
 

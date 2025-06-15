@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
+import { authService } from '../lib/auth';
+import type { User } from '@supabase/supabase-js';
 
 export type AuthState = {
   isAuthenticated: boolean;
   isLoading: boolean;
   userId?: string;
+  user?: User | null;
 };
 
 export function useAuth() {
@@ -11,82 +14,98 @@ export function useAuth() {
     isAuthenticated: false,
     isLoading: true,
     userId: undefined,
+    user: null,
   });
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const userId = localStorage.getItem('user_id');
+      setState(prev => ({ ...prev, isLoading: true }));
       
-      if (token && userId) {
-        // Basic token validation - check if token exists and is not expired
-        try {
-          const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-          const isExpired = tokenPayload.exp * 1000 < Date.now();
-          
-          if (!isExpired) {
-            setState({
-              isAuthenticated: true,
-              isLoading: false,
-              userId,
-            });
-            return;
-          }
-        } catch {
-          // If token parsing fails, treat as not authenticated
-        }
+      const user = await authService.getCurrentUser();
+      const session = await authService.getSession();
+      
+      if (user && session) {
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          userId: user.id,
+          user,
+        });
+      } else {
+        setState({
+          isAuthenticated: false,
+          isLoading: false,
+          userId: undefined,
+          user: null,
+        });
       }
-      
-      // Clear invalid tokens
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_id');
-      
-      setState({
-        isAuthenticated: false,
-        isLoading: false,
-        userId: undefined,
-      });
     } catch (error) {
+      console.error('Auth check failed:', error);
       setState({
         isAuthenticated: false,
         isLoading: false,
         userId: undefined,
+        user: null,
       });
     }
   };
 
-  const login = (token: string, userId: string) => {
-    localStorage.setItem('access_token', token);
-    localStorage.setItem('user_id', userId);
-    setState({
-      isAuthenticated: true,
-      isLoading: false,
-      userId,
-    });
+  const login = async (email: string, password: string) => {
+    try {
+      const { user, session } = await authService.login({ email, password });
+      if (user && session) {
+        setState({
+          isAuthenticated: true,
+          isLoading: false,
+          userId: user.id,
+          user,
+        });
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_id');
-    setState({
-      isAuthenticated: false,
-      isLoading: false,
-      userId: undefined,
-    });
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setState({
+        isAuthenticated: false,
+        isLoading: false,
+        userId: undefined,
+        user: null,
+      });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   useEffect(() => {
     checkAuthStatus();
     
-    // Listen for storage changes (e.g., logout in another tab)
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'access_token' || e.key === 'user_id') {
-        checkAuthStatus();
+    // Listen to Supabase auth state changes
+    const { data: { subscription } } = authService.onAuthStateChange(
+      (event, session) => {
+        if (session?.user) {
+          setState({
+            isAuthenticated: true,
+            isLoading: false,
+            userId: session.user.id,
+            user: session.user,
+          });
+        } else {
+          setState({
+            isAuthenticated: false,
+            isLoading: false,
+            userId: undefined,
+            user: null,
+          });
+        }
       }
-    };
+    );
     
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    return () => subscription.unsubscribe();
   }, []);
 
   return { ...state, login, logout, checkAuthStatus };

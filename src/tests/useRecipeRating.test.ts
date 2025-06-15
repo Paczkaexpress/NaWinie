@@ -15,6 +15,16 @@ vi.mock('../hooks/useAuth', () => ({
   })
 }));
 
+// Mock the authService
+vi.mock('../lib/auth', () => ({
+  authService: {
+    getSession: vi.fn().mockResolvedValue({
+      access_token: 'mock-access-token',
+      user: { id: 'user-123' }
+    })
+  }
+}));
+
 describe('useRecipeRating', () => {
   beforeEach(() => {
     vi.useFakeTimers();
