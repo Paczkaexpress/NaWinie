@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRecipeDetail, useAuth } from '../hooks';
+import { RatingService } from '../lib/ratingService';
 import type { RecipeRatingDto } from '../types';
 
 // Component imports
@@ -41,6 +42,7 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
   const { recipe, isLoading, error, retry } = useRecipeDetail(recipeId);
   const { isAuthenticated } = useAuth();
   const [currentRating, setCurrentRating] = useState<RecipeRatingDto | null>(null);
+  const [ratingRefresh, setRatingRefresh] = useState(0); // Force rating refresh
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Safe toast function that works with SSR
@@ -54,8 +56,27 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
     setToast(null);
   }, []);
 
+  // Get current rating data from RatingService (localStorage)
+  const getCurrentRatingData = useCallback(() => {
+    if (!recipe) return null;
+    
+    const storedRating = RatingService.getRating(recipeId);
+    if (storedRating) {
+      return {
+        average_rating: storedRating.average_rating,
+        total_votes: storedRating.total_votes
+      };
+    }
+    
+    return {
+      average_rating: recipe.average_rating,
+      total_votes: recipe.total_votes
+    };
+  }, [recipe, recipeId, ratingRefresh]); // Include ratingRefresh to force recalculation
+
   const handleRatingSubmitted = useCallback((rating: RecipeRatingDto) => {
     setCurrentRating(rating);
+    setRatingRefresh(prev => prev + 1); // Force refresh of rating data
     showToast('Dziękujemy za ocenę przepisu!', 'success');
   }, [showToast]);
 
@@ -201,8 +222,8 @@ export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDet
     );
   }
 
-  // Main recipe view
-  const displayRating = currentRating || {
+  // Main recipe view - Get current rating data from RatingService
+  const displayRating = getCurrentRatingData() || {
     average_rating: recipe.average_rating,
     total_votes: recipe.total_votes
   };

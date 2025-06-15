@@ -1,84 +1,74 @@
 import { useState } from 'react';
+import type { RecipeRatingDto } from '../types';
+import { useAuth } from './useAuth';
 import { authService } from '../lib/auth';
-import type { RateRecipeCommand, RecipeRatingDto } from '../types';
 
-export type RecipeRatingState = {
-  hasRated: boolean;
-  currentUserRating?: number;
-  isSubmitting: boolean;
+interface UseRecipeRatingReturn {
+  isLoading: boolean;
   error: string | null;
-};
+  submitRating: (recipeId: string, rating: number) => Promise<RecipeRatingDto | null>;
+}
 
-export function useRecipeRating(recipeId: string) {
-  const [state, setState] = useState<RecipeRatingState>({
-    hasRated: false,
-    currentUserRating: undefined,
-    isSubmitting: false,
-    error: null,
-  });
+export function useRecipeRating(): UseRecipeRatingReturn {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
 
-  const submitRating = async (rating: number): Promise<RecipeRatingDto | null> => {
-    if (rating < 1 || rating > 5) {
-      setState(prev => ({ ...prev, error: 'Nieprawidłowa ocena. Wybierz od 1 do 5 gwiazdek' }));
+  const submitRating = async (recipeId: string, rating: number): Promise<RecipeRatingDto | null> => {
+    // Check if user is authenticated
+    if (!user || !token) {
+      setError('You must be logged in to rate recipes');
       return null;
     }
 
+    // Validate rating
+    if (rating < 1 || rating > 5) {
+      setError('Rating must be between 1 and 5');
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
     try {
-      setState(prev => ({ ...prev, isSubmitting: true, error: null }));
-      
-      // Get current session for authentication
-      const session = await authService.getSession();
-      if (!session?.access_token) {
-        throw new Error('Musisz być zalogowany aby ocenić przepis');
-      }
-      
-      const command: RateRecipeCommand = { rating };
-      
+      console.log('⭐ Submitting rating via API:', {
+        recipeId,
+        rating,
+        userId: user.id
+      });
+
       const response = await fetch(`/api/recipes/${recipeId}/rate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(command),
+        body: JSON.stringify({ rating })
       });
-      
+
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Musisz być zalogowany aby ocenić przepis');
-        }
-        if (response.status === 404) {
-          throw new Error('Przepis nie został znaleziony');
-        }
-        if (response.status === 409) {
-          throw new Error('Już oceniłeś ten przepis');
-        }
-        if (response.status === 400) {
-          throw new Error('Nieprawidłowa ocena');
-        }
-        throw new Error('Błąd podczas wysyłania oceny');
+        const errorData = await response.json().catch(() => ({ detail: 'An error occurred' }));
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
       }
+
+      const result = await response.json() as RecipeRatingDto;
       
-      const ratingResult: RecipeRatingDto = await response.json();
+      console.log('✅ Rating submitted successfully:', result);
       
-      setState(prev => ({ 
-        ...prev, 
-        hasRated: true, 
-        currentUserRating: rating,
-        isSubmitting: false 
-      }));
-      
-      return ratingResult;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Wystąpił nieoczekiwany błąd';
-      setState(prev => ({ ...prev, error: errorMessage, isSubmitting: false }));
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to submit rating';
+      console.error('❌ Error submitting rating:', err);
+      setError(errorMessage);
       return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const clearError = () => {
-    setState(prev => ({ ...prev, error: null }));
+  return {
+    isLoading,
+    error,
+    submitRating
   };
-
-  return { ...state, submitRating, clearError };
 } 

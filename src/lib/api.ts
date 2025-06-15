@@ -185,7 +185,7 @@ export async function findRecipesByIngredients(
       };
     }
 
-    // Fetch the actual recipe data
+    // Fetch the actual recipe data (will have current ratings from database)
     const { data, error: supabaseError } = await supabase
       .from('recipes')
       .select('*')
@@ -266,7 +266,7 @@ export async function getRecipeById(id: string, options?: FetchOptions): Promise
   }
   
   try {
-    // Fallback to Supabase
+    // Fallback to Supabase - will get current rating data from database
     const { data: recipe, error: recipeError } = await supabase
       .from('recipes')
       .select('*')
@@ -321,6 +321,7 @@ export async function getRecipeById(id: string, options?: FetchOptions): Promise
       }));
     }
 
+    // Return recipe with current rating data from database
     return {
       ...recipe,
       ingredients: transformedIngredients,
