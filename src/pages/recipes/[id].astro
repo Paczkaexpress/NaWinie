@@ -2,11 +2,6 @@
 import Layout from '../../layouts/Layout.astro';
 import RecipeDetailPageWithErrorBoundary from '../../components/RecipeDetailPageWithErrorBoundary';
 import ToastProvider from '../../components/ToastProvider';
-import ClientTest from '../../components/ClientTest';
-import RecipeTestSimple from '../../components/RecipeTestSimple';
-import RecipeTestWithHook from '../../components/RecipeTestWithHook';
-import RecipeTestWithAuth from '../../components/RecipeTestWithAuth';
-import RecipeTestMinimal from '../../components/RecipeTestMinimal';
 
 const { id } = Astro.params;
 
@@ -28,17 +23,6 @@ const description = `Sprawdź szczegóły przepisu, składniki i sposób przygot
 
 <Layout title={title}>
   <main>
-    <ClientTest client:load />
-    
-    <RecipeTestSimple recipeId={id} client:load />
-    
-    <RecipeTestWithHook recipeId={id} client:load />
-    
-    <RecipeTestWithAuth recipeId={id} client:load />
-    
-    <RecipeTestMinimal recipeId={id} client:load />
-    
-    <!-- Now testing the original complex component -->
     <ToastProvider client:load>
       <RecipeDetailPageWithErrorBoundary recipeId={id} client:load />
     </ToastProvider>

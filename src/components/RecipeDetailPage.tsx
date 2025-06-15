@@ -18,18 +18,10 @@ interface RecipeDetailPageProps {
 }
 
 export default function RecipeDetailPage({ recipeId, className = '' }: RecipeDetailPageProps) {
-  console.log('🎯 RecipeDetailPage: Component rendered with recipeId:', recipeId);
-  console.log('🎯 RecipeDetailPage: recipeId type:', typeof recipeId);
-  
   const { recipe, isLoading, error, retry } = useRecipeDetail(recipeId);
   const { isAuthenticated } = useAuth();
   // const { addToast } = useToast(); // Temporarily disabled
   const [currentRating, setCurrentRating] = useState<RecipeRatingDto | null>(null);
-  
-  console.log('🎯 RecipeDetailPage: Hook state - isLoading:', isLoading, 'error:', error, 'recipe:', recipe?.name || 'null');
-  console.log('🎯 RecipeDetailPage: Recipe image_data type:', typeof recipe?.image_data);
-  console.log('🎯 RecipeDetailPage: Recipe image_data length:', recipe?.image_data?.length);
-  console.log('🎯 RecipeDetailPage: Recipe image_data preview:', recipe?.image_data?.substring(0, 100));
 
   const handleRatingSubmitted = useCallback((rating: RecipeRatingDto) => {
     setCurrentRating(rating);

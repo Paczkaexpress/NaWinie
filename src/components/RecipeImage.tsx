@@ -24,6 +24,16 @@ export default function RecipeImage({ imageData, recipeName, className = '' }: R
     setHasError(true);
   };
 
+  // Helper function to get the correct image src
+  const getImageSrc = (imageData: string) => {
+    // Check if imageData already includes the data URL prefix
+    if (imageData.startsWith('data:image/')) {
+      return imageData; // Use as-is if it's already a complete data URL
+    }
+    // Otherwise, add the data URL prefix
+    return `data:image/jpeg;base64,${imageData}`;
+  };
+
   if (!imageData || hasError) {
     return (
       <div className={`bg-gray-200 flex items-center justify-center ${className}`}>
@@ -77,7 +87,7 @@ export default function RecipeImage({ imageData, recipeName, className = '' }: R
         </div>
       )}
       <img
-        src={`data:image/jpeg;base64,${imageData}`}
+        src={getImageSrc(imageData)}
         alt={`Zdjęcie przepisu: ${recipeName}`}
         className={`w-full h-full object-cover transition-opacity duration-300 ${
           isLoading ? 'opacity-0' : 'opacity-100'
