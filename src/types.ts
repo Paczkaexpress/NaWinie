@@ -202,4 +202,19 @@ export type FormValidationState = {
 export type ImagePreview = {
   file: File;
   url: string;
+};
+
+// Recipe Detail View Types
+export type RecipeDetailViewState = {
+  recipe: RecipeDetailDto | null;
+  isLoading: boolean;
+  error: string | null;
+  isRatingLoading: boolean;
+  ratingError: string | null;
+};
+
+export type RecipeRatingState = {
+  hasRated: boolean;
+  currentUserRating?: number;
+  isSubmitting: boolean;
 }; 

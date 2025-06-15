@@ -3,4 +3,13 @@ export { useAddRecipeForm } from './useAddRecipeForm';
 export { useFormValidation } from './useFormValidation';
 export { useImageUpload } from './useImageUpload';
 export { useIngredients } from './useIngredients';
-export { useFormPersistence } from './useFormPersistence'; 
+export { default as useIngredientsSearch } from './useIngredientsSearch';
+export { default as useRecipeSearch } from './useRecipeSearch';
+export { default as useDefaultRecipes } from './useDefaultRecipes';
+export { default as useUrlIngredients } from './useUrlIngredients';
+export { useFormPersistence } from './useFormPersistence';
+
+// New hooks for recipe detail view
+export { useRecipeDetail } from './useRecipeDetail';
+export { useRecipeRating } from './useRecipeRating';
+export { useAuth } from './useAuth'; 
