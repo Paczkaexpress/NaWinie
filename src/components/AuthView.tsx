@@ -24,17 +24,20 @@ export default function AuthView() {
   }, []);
 
   const handleAuth = async (formData: AuthFormData) => {
+    console.log('🔐 AuthView: Form submitted!', { email: formData.email, hasPassword: !!formData.password });
     setIsLoading(true);
     setError('');
 
     try {
       if (formData.confirmPassword !== undefined) {
         // Register mode
+        console.log('🔐 AuthView: Registration mode detected');
         const registerData: RegisterRequest = {
           email: formData.email,
           password: formData.password,
           confirm_password: formData.confirmPassword
         };
+        console.log('🔐 AuthView: Calling authService.register...');
         const result = await authService.register(registerData);
         
         // Show success message for registration
@@ -44,16 +47,21 @@ export default function AuthView() {
         }
       } else {
         // Login mode
+        console.log('🔐 AuthView: Login mode detected');
         const loginData: LoginRequest = {
           email: formData.email,
           password: formData.password
         };
+        console.log('🔐 AuthView: Calling authService.login...');
         await authService.login(loginData);
+        console.log('🔐 AuthView: authService.login completed successfully');
       }
 
+      console.log('🔐 AuthView: Authentication successful, redirecting...');
       // Redirect to home page on success
       window.location.href = '/';
     } catch (err) {
+      console.error('🔐 AuthView: Authentication error:', err);
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
       setIsLoading(false);

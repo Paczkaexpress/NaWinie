@@ -397,7 +397,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               Share your experience with this recipe by giving it a rating.
             </p>
             <a 
-              href="/login" 
+              href="/auth" 
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
               Log in to rate
