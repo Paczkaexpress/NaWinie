@@ -7,10 +7,11 @@ import useUrlIngredients from "../hooks/useUrlIngredients";
 import useRecipeSearch from "../hooks/useRecipeSearch";
 import useDefaultRecipes from "../hooks/useDefaultRecipes";
 import useTextRecipeSearch from "../hooks/useTextRecipeSearch";
+import { useAuth } from "../hooks/useAuth";
 import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
-import { Search, Filter, SortAsc, X } from "lucide-react";
+import { Search, Filter, SortAsc, X, Plus } from "lucide-react";
 
 /**
  * HomeView – top-level component for the "/" route.
@@ -28,6 +29,9 @@ const HomeView: React.FC = React.memo(() => {
   // Show loading state during hydration
   const [isHydrated, setIsHydrated] = React.useState(false);
   const [searchInput, setSearchInput] = React.useState("");
+
+  // Authentication state
+  const { isAuthenticated, user } = useAuth();
 
   React.useEffect(() => {
     console.log('HomeView hydrating...');
@@ -168,6 +172,10 @@ const HomeView: React.FC = React.memo(() => {
     clearTextSearch();
   }, [clearTextSearch]);
 
+  const handleAddRecipe = React.useCallback(() => {
+    window.location.href = '/add-recipe';
+  }, []);
+
   console.log('Recipes:', recipes, 'Error:', error, 'Search type:', searchType);
 
   if (!isHydrated) {
@@ -271,6 +279,17 @@ const HomeView: React.FC = React.memo(() => {
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  {isAuthenticated && (
+                    <Button 
+                      onClick={handleAddRecipe}
+                      variant="default"
+                      size="sm"
+                      className="bg-orange-500 hover:bg-orange-600 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Dodaj przepis
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm">
                     <Filter className="h-4 w-4" />
                     Filtruj

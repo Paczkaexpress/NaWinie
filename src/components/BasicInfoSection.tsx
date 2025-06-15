@@ -1,25 +1,23 @@
 import React from 'react';
 
 export interface BasicInfoSectionProps {
-  name: string;
-  preparationTime: number;
-  complexityLevel: 'easy' | 'medium' | 'hard';
-  nameError: string | null;
-  preparationTimeError: string | null;
-  onUpdateName: (name: string) => void;
-  onUpdatePreparationTime: (time: number) => void;
-  onUpdateComplexityLevel: (level: 'easy' | 'medium' | 'hard') => void;
+  values: {
+    name: string;
+    preparation_time_minutes: number;
+    complexity_level: 'easy' | 'medium' | 'hard';
+  };
+  onChange: (field: string, value: any) => void;
+  errors: {
+    name?: string;
+    preparation_time_minutes?: string;
+    complexity_level?: string;
+  };
 }
 
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
-  name,
-  preparationTime,
-  complexityLevel,
-  nameError,
-  preparationTimeError,
-  onUpdateName,
-  onUpdatePreparationTime,
-  onUpdateComplexityLevel
+  values,
+  onChange,
+  errors
 }) => {
   const complexityOptions = [
     { value: 'easy', label: 'Łatwy' },
@@ -42,19 +40,19 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           <input
             type="text"
             id="recipeName"
-            value={name}
-            onChange={(e) => onUpdateName(e.target.value)}
+            value={values.name || ''}
+            onChange={(e) => onChange('name', e.target.value)}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-              nameError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+              errors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
             }`}
             placeholder="Wprowadź nazwę przepisu"
             maxLength={255}
           />
-          {nameError && (
-            <p className="mt-1 text-sm text-red-600">{nameError}</p>
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
           )}
           <p className="mt-1 text-sm text-gray-500">
-            {name.length}/255 znaków
+            {(values.name || '').length}/255 znaków
           </p>
         </div>
 
@@ -68,17 +66,17 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             <input
               type="number"
               id="preparationTime"
-              value={preparationTime}
-              onChange={(e) => onUpdatePreparationTime(Number(e.target.value))}
+              value={values.preparation_time_minutes || ''}
+              onChange={(e) => onChange('preparation_time_minutes', Number(e.target.value))}
               min="1"
               max="9999"
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                preparationTimeError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                errors.preparation_time_minutes ? 'border-red-300 bg-red-50' : 'border-gray-300'
               }`}
               placeholder="np. 30"
             />
-            {preparationTimeError && (
-              <p className="mt-1 text-sm text-red-600">{preparationTimeError}</p>
+            {errors.preparation_time_minutes && (
+              <p className="mt-1 text-sm text-red-600">{errors.preparation_time_minutes}</p>
             )}
           </div>
 
@@ -89,8 +87,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             </label>
             <select
               id="complexityLevel"
-              value={complexityLevel}
-              onChange={(e) => onUpdateComplexityLevel(e.target.value as 'easy' | 'medium' | 'hard')}
+              value={values.complexity_level || 'easy'}
+              onChange={(e) => onChange('complexity_level', e.target.value as 'easy' | 'medium' | 'hard')}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               {complexityOptions.map(option => (
