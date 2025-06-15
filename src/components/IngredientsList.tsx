@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { memo } from 'react';
 import type { RecipeIngredientDto } from '../types';
 
 interface IngredientItemProps {
   ingredient: RecipeIngredientDto;
 }
 
-function IngredientItem({ ingredient }: IngredientItemProps) {
+const IngredientItem = memo(function IngredientItem({ ingredient }: IngredientItemProps) {
   const { name, amount, unit_type, is_optional, substitute_recommendation } = ingredient;
 
   return (
@@ -29,14 +29,14 @@ function IngredientItem({ ingredient }: IngredientItemProps) {
       </div>
     </li>
   );
-}
+});
 
 interface IngredientsListProps {
   ingredients: RecipeIngredientDto[];
   className?: string;
 }
 
-export default function IngredientsList({ ingredients, className = '' }: IngredientsListProps) {
+const IngredientsList = memo(function IngredientsList({ ingredients, className = '' }: IngredientsListProps) {
   if (!ingredients || ingredients.length === 0) {
     return (
       <div className={`bg-gray-50 rounded-lg p-6 text-center ${className}`}>
@@ -100,4 +100,6 @@ export default function IngredientsList({ ingredients, className = '' }: Ingredi
       </div>
     </div>
   );
-} 
+});
+
+export default IngredientsList; 

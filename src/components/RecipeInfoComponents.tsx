@@ -1,22 +1,22 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 
 interface PrepTimeDisplayProps {
   prepTime: number;
   className?: string;
 }
 
-export function PrepTimeDisplay({ prepTime, className = '' }: PrepTimeDisplayProps) {
-  const formatTime = (minutes: number): string => {
-    if (minutes < 60) {
-      return `${minutes} min`;
+export const PrepTimeDisplay = memo(function PrepTimeDisplay({ prepTime, className = '' }: PrepTimeDisplayProps) {
+  const formattedTime = useMemo(() => {
+    if (prepTime < 60) {
+      return `${prepTime} min`;
     }
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
+    const hours = Math.floor(prepTime / 60);
+    const remainingMinutes = prepTime % 60;
     if (remainingMinutes === 0) {
       return `${hours} godz.`;
     }
     return `${hours} godz. ${remainingMinutes} min`;
-  };
+  }, [prepTime]);
 
   return (
     <div className={`flex items-center text-gray-600 ${className}`}>
@@ -35,20 +35,20 @@ export function PrepTimeDisplay({ prepTime, className = '' }: PrepTimeDisplayPro
         />
       </svg>
       <span className="text-sm font-medium">
-        {formatTime(prepTime)}
+        {formattedTime}
       </span>
     </div>
   );
-}
+});
 
 interface DifficultyBadgeProps {
   difficulty: 'easy' | 'medium' | 'hard';
   className?: string;
 }
 
-export function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeProps) {
-  const getDifficultyConfig = (level: 'easy' | 'medium' | 'hard') => {
-    switch (level) {
+export const DifficultyBadge = memo(function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeProps) {
+  const difficultyConfig = useMemo(() => {
+    switch (difficulty) {
       case 'easy':
         return {
           text: 'Łatwy',
@@ -70,18 +70,16 @@ export function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeP
           className: 'bg-gray-100 text-gray-800 border-gray-200',
         };
     }
-  };
-
-  const config = getDifficultyConfig(difficulty);
+  }, [difficulty]);
 
   return (
     <span 
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${config.className} ${className}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${difficultyConfig.className} ${className}`}
     >
-      {config.text}
+      {difficultyConfig.text}
     </span>
   );
-}
+});
 
 interface RatingDisplayProps {
   averageRating: number;
@@ -89,16 +87,16 @@ interface RatingDisplayProps {
   className?: string;
 }
 
-export function RatingDisplay({ averageRating, totalVotes, className = '' }: RatingDisplayProps) {
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalfStar = rating % 1 >= 0.5;
+export const RatingDisplay = memo(function RatingDisplay({ averageRating, totalVotes, className = '' }: RatingDisplayProps) {
+  const stars = useMemo(() => {
+    const starElements = [];
+    const fullStars = Math.floor(averageRating);
+    const hasHalfStar = averageRating % 1 >= 0.5;
     
     for (let i = 0; i < 5; i++) {
       if (i < fullStars) {
         // Full star
-        stars.push(
+        starElements.push(
           <svg 
             key={i} 
             className="w-5 h-5 text-yellow-400 fill-current" 
@@ -110,7 +108,7 @@ export function RatingDisplay({ averageRating, totalVotes, className = '' }: Rat
         );
       } else if (i === fullStars && hasHalfStar) {
         // Half star
-        stars.push(
+        starElements.push(
           <svg 
             key={i} 
             className="w-5 h-5 text-yellow-400" 
@@ -133,7 +131,7 @@ export function RatingDisplay({ averageRating, totalVotes, className = '' }: Rat
         );
       } else {
         // Empty star
-        stars.push(
+        starElements.push(
           <svg 
             key={i} 
             className="w-5 h-5 text-gray-300 fill-current" 
@@ -146,17 +144,21 @@ export function RatingDisplay({ averageRating, totalVotes, className = '' }: Rat
       }
     }
     
-    return stars;
-  };
+    return starElements;
+  }, [averageRating]);
+
+  const voteText = useMemo(() => {
+    return `${averageRating.toFixed(1)} (${totalVotes} ${totalVotes === 1 ? 'ocena' : 'ocen'})`;
+  }, [averageRating, totalVotes]);
 
   return (
     <div className={`flex items-center ${className}`}>
       <div className="flex items-center mr-2">
-        {renderStars(averageRating)}
+        {stars}
       </div>
       <span className="text-sm text-gray-600">
-        {averageRating.toFixed(1)} ({totalVotes} {totalVotes === 1 ? 'ocena' : 'ocen'})
+        {voteText}
       </span>
     </div>
   );
-} 
+}); 
