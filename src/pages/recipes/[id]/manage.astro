@@ -1,6 +1,6 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
-import RecipeManagementView from '../../../components/RecipeManagementView';
+import OptimizedRecipeManagementView from '../../../components/OptimizedRecipeManagementView';
 import { authService } from '../../../lib/auth';
 
 // Get recipe ID from URL params
@@ -40,11 +40,15 @@ try {
 
 <Layout title={`Zarządzanie przepisem${initialRecipe ? ` - ${initialRecipe.name}` : ''}`}>
   <main class="container mx-auto px-4 py-8">
-    <RecipeManagementView 
+    <OptimizedRecipeManagementView 
       client:load
       recipeId={id}
       initialRecipe={initialRecipe}
       currentUser={user}
     />
   </main>
-</Layout> 
+</Layout>
+
+<style>
+  @import '../../../styles/animations.css';
+</style> 
