@@ -1,0 +1,37 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import RecipeDetailPageWithErrorBoundary from '../../components/RecipeDetailPageWithErrorBoundary';
+import ToastProvider from '../../components/ToastProvider';
+
+const { id } = Astro.params;
+
+// Validate that ID is provided and is a valid UUID format
+if (!id) {
+  return Astro.redirect('/404');
+}
+
+// Basic UUID validation (format check)
+const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+if (!uuidRegex.test(id)) {
+  return Astro.redirect('/404');
+}
+
+// Set page title for SEO
+const title = `Szczegóły przepisu - Na Winie`;
+const description = `Sprawdź szczegóły przepisu, składniki i sposób przygotowania.`;
+---
+
+<Layout title={title}>
+  <main>
+    <ToastProvider client:load>
+      <RecipeDetailPageWithErrorBoundary recipeId={id} client:load />
+    </ToastProvider>
+  </main>
+</Layout>
+
+<style>
+  main {
+    min-height: 100vh;
+    background-color: #f8fafc;
+  }
+</style> 
