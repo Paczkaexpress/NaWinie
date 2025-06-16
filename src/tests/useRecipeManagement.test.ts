@@ -7,7 +7,7 @@ import type { RecipeDetailDto, UserDto } from '../types';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Mock useAuth hook
+// Mock user data
 const mockUser: UserDto = {
   id: 'user-1',
   email: 'test@example.com',
@@ -15,9 +15,15 @@ const mockUser: UserDto = {
   updated_at: '2024-01-01T00:00:00Z'
 };
 
+// Mock useAuth hook
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
-    user: mockUser,
+    user: {
+      id: 'user-1',
+      email: 'test@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
     isLoading: false,
     error: null
   })

@@ -19,6 +19,10 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   onChange,
   errors
 }) => {
+  // Add safety check for values
+  if (!values) {
+    return <div>Loading...</div>;
+  }
   const complexityOptions = [
     { value: 'easy', label: 'Łatwy' },
     { value: 'medium', label: 'Średni' },
