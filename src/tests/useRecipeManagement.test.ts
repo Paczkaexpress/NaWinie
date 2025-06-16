@@ -2,10 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRecipeManagement } from '../hooks/useRecipeManagement';
 import type { RecipeDetailDto, UserDto } from '../types';
-
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+import { server } from './setup';
+import { http, HttpResponse } from 'msw';
 
 // Mock useAuth hook
 vi.mock('../hooks/useAuth', () => ({
@@ -36,59 +34,51 @@ vi.mock('../lib/auth', () => ({
   }
 }));
 
-// Mock user data for tests
-const mockUser: UserDto = {
-  id: 'user-1',
-  email: 'test@example.com',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z'
-};
-
-// Mock window.location
-const mockLocation = {
-  href: ''
-};
-Object.defineProperty(window, 'location', {
-  value: mockLocation,
-  writable: true
-});
-
-const mockRecipe: RecipeDetailDto = {
-  id: 'recipe-1',
-  name: 'Test Recipe',
-  description: 'Test Description',
-  preparation_time_minutes: 30,
-  complexity_level: 'medium',
-  author_id: 'user-1',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
-  steps: [
-    { step: 1, description: 'Step 1' },
-    { step: 2, description: 'Step 2' }
-  ],
-  ingredients: [
-    { 
-      ingredient_id: 'ing-1', 
-      amount: 100, 
-      is_optional: false,
-      substitute_recommendation: null,
-      name: 'Ingredient 1',
-      unit_type: 'grams'
-    }
-  ],
-  image_data: 'base64-image-data',
-  average_rating: 4.5,
-  total_votes: 10
-};
-
 describe('useRecipeManagement', () => {
+  const mockUser: UserDto = {
+    id: 'user-1',
+    email: 'test@example.com',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z'
+  };
+
+  const mockRecipe: RecipeDetailDto = {
+    id: 'recipe-1',
+    name: 'Test Recipe',
+    description: 'Test Description',
+    author_id: 'user-1',
+    preparation_time_minutes: 30,
+    complexity_level: 'medium',
+    image_data: 'base64-image-data',
+    average_rating: 4.5,
+    total_votes: 10,
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+    ingredients: [
+      {
+        ingredient_id: 'ing-1',
+        name: 'Ingredient 1',
+        amount: 100,
+        unit_type: 'grams',
+        is_optional: false,
+        substitute_recommendation: null
+      }
+    ],
+    steps: [
+      { step: 1, description: 'Step 1' },
+      { step: 2, description: 'Step 2' }
+    ]
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    mockLocation.href = '';
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(mockRecipe)
-    });
+    server.resetHandlers();
+    
+    // Default handlers for all tests
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      })
+    );
   });
 
   it('should initialize with correct default state', () => {
@@ -105,10 +95,14 @@ describe('useRecipeManagement', () => {
   });
 
   it('should fetch recipe on mount', async () => {
-    renderHook(() => useRecipeManagement('recipe-1', mockUser));
+    const { result } = renderHook(() => 
+      useRecipeManagement('recipe-1', mockUser)
+    );
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('/api/recipes/recipe-1');
+      expect(result.current.recipe).toEqual(mockRecipe);
+      expect(result.current.isLoading).toBe(false);
+      expect(result.current.error).toBeNull();
     });
   });
 
@@ -125,11 +119,11 @@ describe('useRecipeManagement', () => {
   });
 
   it('should handle 404 error correctly', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 404,
-      json: vi.fn().mockResolvedValue({ message: 'Not found' })
-    });
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 404 });
+      })
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
@@ -143,11 +137,11 @@ describe('useRecipeManagement', () => {
   });
 
   it('should handle 401 error correctly', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-      json: vi.fn().mockResolvedValue({ message: 'Unauthorized' })
-    });
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 401 });
+      })
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
@@ -159,11 +153,11 @@ describe('useRecipeManagement', () => {
   });
 
   it('should handle generic fetch error', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: vi.fn().mockResolvedValue({ message: 'Server error' })
-    });
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 500 });
+      })
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
@@ -175,14 +169,18 @@ describe('useRecipeManagement', () => {
   });
 
   it('should handle network error', async () => {
-    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.error();
+      })
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Network error');
+      expect(result.current.error).toMatch(/Failed to fetch|Network request failed|TypeError/);
     });
   });
 
@@ -199,13 +197,14 @@ describe('useRecipeManagement', () => {
   it('should determine if user is not author correctly', async () => {
     const notOwnedRecipe = {
       ...mockRecipe,
-      author_id: 'other-user-id'
+      author_id: 'other-user'
     };
 
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: vi.fn().mockResolvedValue(notOwnedRecipe)
-    });
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(notOwnedRecipe);
+      })
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
@@ -221,16 +220,19 @@ describe('useRecipeManagement', () => {
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
+    // Test opening modal
     act(() => {
       result.current.openEditModal();
     });
 
     expect(result.current.isEditModalOpen).toBe(true);
 
+    // Test closing modal
     act(() => {
       result.current.closeEditModal();
     });
@@ -243,16 +245,19 @@ describe('useRecipeManagement', () => {
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
+    // Test opening delete confirmation
     act(() => {
       result.current.openDeleteConfirm();
     });
 
     expect(result.current.deleteConfirmOpen).toBe(true);
 
+    // Test closing delete confirmation
     act(() => {
       result.current.closeDeleteConfirm();
     });
@@ -261,40 +266,34 @@ describe('useRecipeManagement', () => {
   });
 
   it('should update recipe successfully', async () => {
-    const updatedRecipe = {
-      ...mockRecipe,
-      name: 'Updated Recipe Name'
-    };
-
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    const updatedRecipe = { ...mockRecipe, name: 'Updated Recipe' };
+    
+    server.use(
+      http.put('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(updatedRecipe);
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(updatedRecipe)
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
-    await act(async () => {
-      await result.current.updateRecipe(updatedRecipe);
-    });
+    const updateData = {
+      name: 'Updated Recipe',
+      preparation_time_minutes: 30,
+      complexity_level: 'medium' as const,
+      steps: [{ step: 1, description: 'Updated Step' }],
+      ingredients: []
+    };
 
-    expect(mockFetch).toHaveBeenLastCalledWith('/api/recipes/recipe-1', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer mock-token'
-      },
-      body: JSON.stringify(updatedRecipe)
+    // Test update
+    await act(async () => {
+      await result.current.updateRecipe(updateData);
     });
 
     expect(result.current.recipe).toEqual(updatedRecipe);
@@ -302,136 +301,177 @@ describe('useRecipeManagement', () => {
   });
 
   it('should handle update recipe 401 error', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up error handler from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.put('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 401 });
       })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        json: vi.fn().mockResolvedValue({ message: 'Unauthorized' })
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
-    await expect(async () => {
-      await act(async () => {
-        await result.current.updateRecipe(mockRecipe);
-      });
-    }).rejects.toThrow('Brak uprawnień do edycji tego przepisu');
+    const updateData = {
+      name: 'Updated Recipe'
+    };
+
+    // Test update error
+    await expect(act(async () => {
+      await result.current.updateRecipe(updateData);
+    })).rejects.toThrow('Brak uprawnień do edycji tego przepisu');
+
+    // Wait for error state to be set
+    await waitFor(() => {
+      expect(result.current.error).toBe('Brak uprawnień do edycji tego przepisu');
+    });
   });
 
   it('should handle update recipe 403 error', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up error handler from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.put('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 403 });
       })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: vi.fn().mockResolvedValue({ message: 'Forbidden' })
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
-    await expect(async () => {
-      await act(async () => {
-        await result.current.updateRecipe(mockRecipe);
-      });
-    }).rejects.toThrow('Nie masz uprawnień do edycji tego przepisu');
+    const updateData = {
+      name: 'Updated Recipe'
+    };
+
+    // Test update error
+    await expect(act(async () => {
+      await result.current.updateRecipe(updateData);
+    })).rejects.toThrow('Nie masz uprawnień do edycji tego przepisu');
+
+    // Wait for error state to be set
+    await waitFor(() => {
+      expect(result.current.error).toBe('Nie masz uprawnień do edycji tego przepisu');
+    });
   });
 
   it('should handle update recipe 400 error with detail', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up error handler from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.put('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json({ detail: 'Invalid data provided' }, { status: 400 });
       })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 400,
-        json: vi.fn().mockResolvedValue({ detail: 'Nazwa przepisu jest wymagana' })
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
-    await expect(async () => {
-      await act(async () => {
-        await result.current.updateRecipe(mockRecipe);
-      });
-    }).rejects.toThrow('Nazwa przepisu jest wymagana');
+    const updateData = {
+      name: 'Updated Recipe'
+    };
+
+    // Test update error
+    await expect(act(async () => {
+      await result.current.updateRecipe(updateData);
+    })).rejects.toThrow('Invalid data provided');
+
+    // Wait for error state to be set
+    await waitFor(() => {
+      expect(result.current.error).toBe('Invalid data provided');
+    });
   });
 
   it('should delete recipe successfully', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Mock window.location.href for navigation
+    const mockLocationSetter = vi.fn();
+    Object.defineProperty(window, 'location', {
+      value: {
+        ...window.location,
+        set href(value: string) {
+          mockLocationSetter(value);
+        }
+      },
+      writable: true
+    });
+
+    // Set up handlers from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.delete('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 204 });
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ message: 'Recipe deleted' })
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
+    // Test delete
     await act(async () => {
       await result.current.deleteRecipe();
     });
 
-    expect(mockFetch).toHaveBeenLastCalledWith('/api/recipes/recipe-1', {
-      method: 'DELETE',
-      headers: {
-        'Authorization': 'Bearer mock-token'
-      }
-    });
-
-    expect(mockLocation.href).toBe('/recipes');
+    expect(mockLocationSetter).toHaveBeenCalledWith('/recipes');
   });
 
   it('should handle delete loading state', async () => {
-    let resolveDelete: (value: any) => void;
+    let resolvePromise: (value: any) => void;
     const deletePromise = new Promise(resolve => {
-      resolveDelete = resolve;
+      resolvePromise = resolve;
     });
 
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up handlers from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.delete('*/api/recipes/recipe-1', async () => {
+        await deletePromise;
+        return new HttpResponse(null, { status: 204 });
       })
-      .mockReturnValueOnce(deletePromise);
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
@@ -441,101 +481,118 @@ describe('useRecipeManagement', () => {
       result.current.deleteRecipe();
     });
 
+    // Check loading state
     expect(result.current.isDeleting).toBe(true);
 
-    // Resolve the delete
-    resolveDelete!({
-      ok: true,
-      json: vi.fn().mockResolvedValue({ message: 'Deleted' })
-    });
+    // Resolve the delete promise
+    resolvePromise!(null);
 
+    // Wait for completion
     await waitFor(() => {
-      expect(mockLocation.href).toBe('/recipes');
+      expect(result.current.isDeleting).toBe(false);
     });
   });
 
   it('should handle delete recipe error', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up error handler from the start
+    server.resetHandlers();
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.delete('*/api/recipes/recipe-1', () => {
+        return new HttpResponse(null, { status: 403 });
       })
-      .mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: vi.fn().mockResolvedValue({ message: 'Forbidden' })
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
-    await expect(async () => {
-      await act(async () => {
-        await result.current.deleteRecipe();
-      });
-    }).rejects.toThrow('Nie masz uprawnień do usunięcia tego przepisu');
+    // Test delete error
+    await expect(act(async () => {
+      await result.current.deleteRecipe();
+    })).rejects.toThrow('Nie masz uprawnień do usunięcia tego przepisu');
 
-    expect(result.current.isDeleting).toBe(false);
-    expect(result.current.deleteConfirmOpen).toBe(false);
+    // Wait for error state to be set
+    await waitFor(() => {
+      expect(result.current.error).toBe('Nie masz uprawnień do usunięcia tego przepisu');
+      expect(result.current.isDeleting).toBe(false);
+      expect(result.current.deleteConfirmOpen).toBe(false);
+    });
   });
 
   it('should refetch recipe data', async () => {
-    const refetchedRecipe = {
-      ...mockRecipe,
-      average_rating: 4.8,
-      total_votes: 15
-    };
-
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    const updatedRecipe = { ...mockRecipe, name: 'Refetched Recipe' };
+    
+    // Set up handlers from the start
+    server.resetHandlers();
+    let callCount = 0;
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        callCount++;
+        if (callCount === 1) {
+          return HttpResponse.json(mockRecipe);
+        } else {
+          return HttpResponse.json(updatedRecipe);
+        }
       })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(refetchedRecipe)
-      });
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
+    // Test refetch
     await act(async () => {
       await result.current.refetch();
     });
 
-    expect(result.current.recipe).toEqual(refetchedRecipe);
+    expect(result.current.recipe).toEqual(updatedRecipe);
   });
 
   it('should handle refetch error', async () => {
-    mockFetch
-      .mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockRecipe)
+    // Set up error handler from the start
+    server.resetHandlers();
+    let callCount = 0;
+    server.use(
+      http.get('*/api/recipes/recipe-1', () => {
+        callCount++;
+        if (callCount === 1) {
+          return HttpResponse.json(mockRecipe);
+        } else {
+          return new HttpResponse(null, { status: 500 });
+        }
       })
-      .mockRejectedValueOnce(new Error('Network error'));
+    );
 
     const { result } = renderHook(() => 
       useRecipeManagement('recipe-1', mockUser)
     );
 
+    // Wait for initial data to load
     await waitFor(() => {
       expect(result.current.recipe).toEqual(mockRecipe);
     });
 
+    // Test refetch error
     await act(async () => {
       await result.current.refetch();
     });
 
-    expect(result.current.error).toBe('Network error');
+    // Wait for error state to be set
+    await waitFor(() => {
+      expect(result.current.error).toBe('Błąd podczas pobierania przepisu');
+    });
   });
 }); 

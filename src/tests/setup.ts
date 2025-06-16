@@ -16,6 +16,22 @@ if (typeof process !== 'undefined') {
 
 const API_BASE_URL = "http://localhost:8000/api";
 
+// Set up JSDOM location for relative URLs
+Object.defineProperty(window, 'location', {
+  value: {
+    href: 'http://localhost:8000',
+    origin: 'http://localhost:8000',
+    protocol: 'http:',
+    host: 'localhost:8000',
+    hostname: 'localhost',
+    port: '8000',
+    pathname: '/',
+    search: '',
+    hash: ''
+  },
+  writable: true
+});
+
 // Mock API handlers  
 const handlers = [
   http.get('*/api/ingredients', ({ request }) => {

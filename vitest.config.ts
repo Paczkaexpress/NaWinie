@@ -13,6 +13,5 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
     },
-    baseUrl: 'http://localhost:8000',
   },
 });
