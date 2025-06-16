@@ -25,10 +25,8 @@ RUN npm install --include=optional
 # Copy frontend source code
 COPY src/ ./src/
 
-# Copy .env file if it exists (for local development)
-COPY .env* ./
-
 # Build with environment variables from either build args (cloud) or .env file (local)
+# The build script will handle missing .env gracefully
 RUN if [ -f ".env" ]; then \
         echo "Building with .env file (local development)..." && \
         export $(grep -v '^#' .env | xargs) && npm run build; \
@@ -78,9 +76,6 @@ COPY --from=backend-builder /usr/local/bin /usr/local/bin
 COPY backend/ ./backend/
 COPY db/ ./db/
 
-# Copy .env file if it exists (for local development only)
-COPY .env* ./
-
 # Copy built frontend from frontend-builder stage
 COPY --from=frontend-builder /app/dist ./dist
 COPY --from=frontend-builder /app/node_modules ./node_modules
@@ -94,13 +89,17 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
 # Load environment variables from .env file if it exists (local development)\n\
-if [ -f "/app/.env" ]; then\n\
+if [ -f "/app/.env" ] && [ -s "/app/.env" ]; then\n\
     echo "Loading environment variables from .env file (local development)..."\n\
     export $(grep -v "^#" /app/.env | xargs)\n\
     echo "Environment loaded from .env file."\n\
 else\n\
-    echo "No .env file found. Using environment variables from cloud platform."\n\
-    echo "PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+    echo "No .env file found or file is empty. Using environment variables from cloud platform."\n\
+    if [ -n "$PUBLIC_SUPABASE_URL" ]; then\n\
+        echo "PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+    else\n\
+        echo "Warning: PUBLIC_SUPABASE_URL not set"\n\
+    fi\n\
 fi\n\
 \n\
 echo "Starting FastAPI backend..."\n\
