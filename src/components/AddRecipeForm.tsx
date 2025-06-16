@@ -45,7 +45,6 @@ const AddRecipeForm: React.FC = () => {
   }, [clearFormData]);
 
   const handleBasicInfoChange = useCallback((field: string, value: any) => {
-    console.log('handleBasicInfoChange called with:', field, value);
     updateFormData({ [field]: value });
     clearFieldError(field as any);
   }, [updateFormData, clearFieldError]);
