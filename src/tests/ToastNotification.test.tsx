@@ -22,6 +22,7 @@ describe('ToastNotification', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.clearAllTimers();
   });
 
   it('should render success toast correctly', () => {
@@ -197,6 +198,12 @@ describe('ToastContainer', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllTimers();
   });
 
   it('should render empty container when no toasts', () => {
@@ -235,10 +242,8 @@ describe('ToastContainer', () => {
     // Click first toast's close button
     fireEvent.click(closeButtons[0]);
     
-    vi.useFakeTimers();
     vi.advanceTimersByTime(300);
     expect(mockOnClose).toHaveBeenCalledWith('toast-1');
-    vi.useRealTimers();
   });
 
   it('should maintain toast order', () => {

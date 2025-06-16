@@ -117,7 +117,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByText('No error')).toBeInTheDocument();
+    expect(screen.getByText('Safe component')).toBeInTheDocument();
   });
 
   it('should handle reload button click', () => {
@@ -206,7 +206,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('should reset error state when component unmounts and remounts', () => {
-    const { unmount, rerender } = render(
+    const { unmount } = render(
       <ErrorBoundary>
         <ThrowError />
       </ErrorBoundary>
@@ -216,7 +216,8 @@ describe('ErrorBoundary', () => {
 
     unmount();
 
-    rerender(
+    // Render a new instance with a safe component
+    render(
       <ErrorBoundary>
         <SafeComponent />
       </ErrorBoundary>

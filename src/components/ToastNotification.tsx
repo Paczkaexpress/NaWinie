@@ -23,7 +23,12 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ toast, onClose })
   const [isExiting, setIsExiting] = useState(false);
 
   useEffect(() => {
-    const duration = toast.duration || 5000;
+    const duration = toast.duration !== undefined ? toast.duration : 5000;
+    
+    // Don't auto-close if duration is 0
+    if (duration === 0) {
+      return;
+    }
     
     const timer = setTimeout(() => {
       setIsExiting(true);
@@ -34,6 +39,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ toast, onClose })
   }, [toast.id, toast.duration, onClose]);
 
   const handleClose = () => {
+    if (isExiting) return; // Prevent multiple close calls
     setIsExiting(true);
     setTimeout(() => onClose(toast.id), 300);
   };

@@ -528,4 +528,3 @@ describe('useRecipeManagement', () => {
     expect(result.current.error).toBe('Network error');
   });
 }); 
-}); 
