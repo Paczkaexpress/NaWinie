@@ -7,14 +7,6 @@ import type { RecipeDetailDto, UserDto } from '../types';
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Mock user data
-const mockUser: UserDto = {
-  id: 'user-1',
-  email: 'test@example.com',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z'
-};
-
 // Mock useAuth hook
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
@@ -34,10 +26,23 @@ vi.mock('../lib/auth', () => ({
   authService: {
     getSession: vi.fn().mockResolvedValue({
       access_token: 'mock-token',
-      user: mockUser
+      user: {
+        id: 'user-1',
+        email: 'test@example.com',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     })
   }
 }));
+
+// Mock user data for tests
+const mockUser: UserDto = {
+  id: 'user-1',
+  email: 'test@example.com',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z'
+};
 
 // Mock window.location
 const mockLocation = {

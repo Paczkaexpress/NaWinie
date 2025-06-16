@@ -8,7 +8,6 @@ import { http, HttpResponse } from 'msw';
 import { db } from '../mocks/db';
 import { User, Recipe, Rating, StoredFile } from '../types';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from '../contexts/AuthContext';
 
 const API_BASE_URL = 'http://localhost:8000/api';
 
