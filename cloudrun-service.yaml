@@ -19,8 +19,12 @@ spec:
       - image: gcr.io/YOUR_PROJECT_ID/nawinie:latest
         ports:
         - name: http1
-          containerPort: 4321
+          containerPort: 8080
         env:
+        # Cloud Run Configuration
+        - name: PORT
+          value: "8080"
+        
         # JWT Configuration
         - name: JWT_SECRET_KEY
           value: "your-jwt-secret-key-use-secret-manager-in-production"
@@ -64,7 +68,7 @@ spec:
         startupProbe:
           httpGet:
             path: /
-            port: 8000
+            port: 8080
           initialDelaySeconds: 10
           timeoutSeconds: 5
           periodSeconds: 10
@@ -73,7 +77,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /
-            port: 8000
+            port: 8080
           initialDelaySeconds: 30
           timeoutSeconds: 5
           periodSeconds: 30 

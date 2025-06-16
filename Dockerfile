@@ -106,9 +106,12 @@ echo "Starting FastAPI backend..."\n\
 uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
 BACKEND_PID=$!\n\
 echo "Starting Astro frontend..."\n\
-cd /app && HOST=0.0.0.0 PORT=4321 node dist/server/entry.mjs &\n\
+# Use PORT environment variable for Cloud Run compatibility (defaults to 4321 for local)\n\
+FRONTEND_PORT=${PORT:-4321}\n\
+cd /app && HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
 FRONTEND_PID=$!\n\
 echo "Both servers started. Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID"\n\
+echo "Frontend running on port: $FRONTEND_PORT, Backend running on port: 8000"\n\
 \n\
 # Function to handle shutdown\n\
 shutdown() {\n\
@@ -130,12 +133,12 @@ RUN chmod +x /app/start.sh && chown appuser:appuser /app/start.sh
 # Switch to non-root user
 USER appuser
 
-# Expose both ports
-EXPOSE 4321 8000
+# Expose ports (Cloud Run will use PORT env var, defaults to 4321 for local)
+EXPOSE 4321 8000 8080
 
 # Health check (updated to check both services)
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/ && curl -f http://localhost:4321/ || exit 1
+    CMD curl -f http://localhost:8000/ && curl -f http://localhost:${PORT:-4321}/ || exit 1
 
 # Default environment variables (can be overridden)
 ENV PYTHONPATH=/app \

@@ -79,6 +79,7 @@ gcloud run deploy $SERVICE_NAME \
     --concurrency 100 \
     --timeout 300 \
     --set-env-vars "\
+PORT=8080,\
 JWT_SECRET_KEY=$JWT_SECRET_KEY,\
 JWT_ALGORITHM=HS256,\
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30,\

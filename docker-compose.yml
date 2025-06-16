@@ -10,7 +10,7 @@ services:
         - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY:-}
         - PUBLIC_USE_LOCAL_BACKEND=${PUBLIC_USE_LOCAL_BACKEND:-false}
     ports:
-      - "4321:4321"  # Astro frontend
+      - "${FRONTEND_PORT:-4321}:${PORT:-4321}"  # Astro frontend (configurable)
       - "8000:8000"  # FastAPI backend
     environment:
       # Load environment variables from .env file or cloud platform
@@ -28,6 +28,8 @@ services:
       - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
       # Optional Backend Configuration
       - PUBLIC_USE_LOCAL_BACKEND=${PUBLIC_USE_LOCAL_BACKEND:-false}
+      # Port Configuration (for Cloud Run compatibility)
+      - PORT=${PORT:-4321}
     env_file:
       - .env
     volumes:
