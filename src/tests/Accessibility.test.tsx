@@ -1,15 +1,29 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { server } from './setup';
 import OptimizedRecipeManagementView from '../components/OptimizedRecipeManagementView';
 import ToastNotification, { ToastContainer } from '../components/ToastNotification';
 import ErrorBoundary from '../components/ErrorBoundary';
 import type { RecipeDetailDto, UserDto } from '../types';
 
+const mockUser: UserDto = {
+  id: 'user-1',
+  email: 'test@example.com',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z'
+};
+
 // Mock dependencies
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
-    user: mockUser,
+    user: {
+      id: 'user-1',
+      email: 'test@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
     isLoading: false,
     error: null
   })
@@ -19,20 +33,15 @@ vi.mock('../lib/auth', () => ({
   authService: {
     getSession: vi.fn().mockResolvedValue({
       access_token: 'mock-token',
-      user: mockUser
+      user: {
+        id: 'user-1',
+        email: 'test@example.com',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     })
   }
 }));
-
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-const mockUser: UserDto = {
-  id: 'user-1',
-  email: 'test@example.com',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z'
-};
 
 const mockRecipe: RecipeDetailDto = {
   id: 'recipe-1',
@@ -65,10 +74,14 @@ const mockRecipe: RecipeDetailDto = {
 describe('Accessibility Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(mockRecipe)
-    });
+    server.use(
+      http.get('*/api/recipes/:recipeId', () => {
+        return HttpResponse.json(mockRecipe);
+      }),
+      http.put('*/api/recipes/:recipeId', () => {
+        return HttpResponse.json(mockRecipe);
+      })
+    );
   });
 
   describe('Recipe Management View Accessibility', () => {

@@ -9,6 +9,11 @@ expect.extend(matchers);
 import.meta.env.PUBLIC_SUPABASE_URL = "https://mock-supabase-url.supabase.co";
 import.meta.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key-for-testing";
 
+// Set NODE_ENV to test mode
+if (typeof process !== 'undefined') {
+  process.env.NODE_ENV = 'test';
+}
+
 const API_BASE_URL = "http://localhost:8000/api";
 
 // Mock API handlers  

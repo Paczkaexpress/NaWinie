@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import useRecipeSearch from "../hooks/useRecipeSearch";
 import * as React from "react";
 import { ToastProvider } from "../components/ToastProvider";
@@ -36,12 +36,11 @@ describe("useRecipeSearch", () => {
 
     const { result } = renderHook(() => useRecipeSearch(["ing1"]), { wrapper });
 
-    // run timers for initial fetch debounce none but we call immediate fetch inside hook loadMore after effect; await next tick
-    await act(async () => {
-      await vi.runAllTicks();
+    await waitFor(() => {
+      expect(result.current.recipes.length).toBe(1);
     });
 
-    expect(result.current.recipes.length).toBe(1);
+    expect(result.current.recipes[0].id).toBe("r1");
     expect(result.current.hasMore).toBe(true);
 
     await act(async () => {

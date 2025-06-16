@@ -8,7 +8,10 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "test": "vitest --config vitest.config.ts",
+    "test": "vitest",
+    "test:verbose": "vitest run",
+    "test:silent": "vitest run --reporter=./vitest.reporter.ts",
+    "coverage": "vitest run --coverage",
     "astro": "astro"
   },
   "dependencies": {

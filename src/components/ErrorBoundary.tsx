@@ -5,6 +5,7 @@ interface Props {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
+  onRetry?: () => void;
 }
 
 interface State {
@@ -46,6 +47,7 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   handleRetry = () => {
+    this.props.onRetry?.();
     this.setState({ hasError: false, error: undefined, errorInfo: undefined });
   };
 

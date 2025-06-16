@@ -3,11 +3,32 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import OptimizedRecipeManagementView from '../components/OptimizedRecipeManagementView';
 import type { RecipeDetailDto, UserDto } from '../types';
+import { server } from './setup';
+import { http, HttpResponse } from 'msw';
+import { db } from '../mocks/db';
+import { User, Recipe, Rating, StoredFile } from '../types';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import RecipeManagement from '../pages/RecipeManagement';
+import { AuthProvider } from '../contexts/AuthContext';
+
+const API_BASE_URL = 'http://localhost:8000/api';
+
+const mockUser: UserDto = {
+  id: 'user-1',
+  email: 'test@example.com',
+  created_at: '2024-01-01T00:00:00Z',
+  updated_at: '2024-01-01T00:00:00Z'
+};
 
 // Mock dependencies
 vi.mock('../hooks/useAuth', () => ({
   useAuth: () => ({
-    user: mockUser,
+    user: {
+      id: 'user-1',
+      email: 'test@example.com',
+      created_at: '2024-01-01T00:00:00Z',
+      updated_at: '2024-01-01T00:00:00Z'
+    },
     isLoading: false,
     error: null
   })
@@ -17,14 +38,15 @@ vi.mock('../lib/auth', () => ({
   authService: {
     getSession: vi.fn().mockResolvedValue({
       access_token: 'mock-token',
-      user: mockUser
+      user: {
+        id: 'user-1',
+        email: 'test@example.com',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      }
     })
   }
 }));
-
-// Mock fetch
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
 
 // Mock window methods
 const mockLocation = { href: '' };
@@ -37,13 +59,6 @@ Object.defineProperty(window, 'history', {
   value: { back: vi.fn() },
   writable: true
 });
-
-const mockUser: UserDto = {
-  id: 'user-1',
-  email: 'test@example.com',
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z'
-};
 
 const mockRecipe: RecipeDetailDto = {
   id: 'recipe-1',
@@ -84,16 +99,17 @@ describe('Recipe Management Integration Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockLocation.href = '';
-    
-    // Default successful recipe fetch
-    mockFetch.mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue(mockRecipe)
-    });
+    server.resetHandlers(); // Reset handlers to default
   });
 
   describe('Recipe Loading and Display', () => {
     it('should load and display recipe for author', async () => {
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+      
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -116,10 +132,11 @@ describe('Recipe Management Integration Tests', () => {
     });
 
     it('should load and display recipe for non-author with rating section', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockNonOwnedRecipe)
-      });
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-2`, () => {
+          return HttpResponse.json(mockNonOwnedRecipe);
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -141,8 +158,12 @@ describe('Recipe Management Integration Tests', () => {
     });
 
     it('should show loading skeletons initially', () => {
-      // Mock a slow response
-      mockFetch.mockImplementation(() => new Promise(() => {}));
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, async () => {
+          await new Promise(resolve => setTimeout(resolve, 10000)); // Simulate delay
+          return HttpResponse.json(mockRecipe);
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -156,11 +177,14 @@ describe('Recipe Management Integration Tests', () => {
     });
 
     it('should handle recipe not found error', async () => {
-      mockFetch.mockResolvedValue({
-        ok: false,
-        status: 404,
-        json: vi.fn().mockResolvedValue({ message: 'Recipe not found' })
-      });
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/nonexistent`, () => {
+          return new HttpResponse(JSON.stringify({ message: 'Recipe not found' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -179,6 +203,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should complete full edit flow successfully', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -205,10 +235,11 @@ describe('Recipe Management Integration Tests', () => {
 
       // Mock successful update
       const updatedRecipe = { ...mockRecipe, name: 'Updated Recipe Name' };
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue(updatedRecipe)
-      });
+      server.use(
+        http.put(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(updatedRecipe);
+        })
+      );
 
       // Save changes
       await user.click(screen.getByText('Zapisz zmiany'));
@@ -226,6 +257,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should handle edit validation errors', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -239,11 +276,21 @@ describe('Recipe Management Integration Tests', () => {
 
       await user.click(screen.getByText('Edytuj'));
 
-      // Clear required field
+      // Edit and clear recipe name to trigger validation
       const nameInput = screen.getByDisplayValue('Test Recipe');
       await user.clear(nameInput);
 
-      // Try to save with empty name
+      // Mock validation error
+      server.use(
+        http.put(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return new HttpResponse(JSON.stringify({ detail: 'Name cannot be empty' }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' },
+          });
+        })
+      );
+
+      // Save changes
       await user.click(screen.getByText('Zapisz zmiany'));
 
       // Should show validation error
@@ -253,6 +300,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should handle edit server errors', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -267,11 +320,11 @@ describe('Recipe Management Integration Tests', () => {
       await user.click(screen.getByText('Edytuj'));
 
       // Mock server error
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500,
-        json: vi.fn().mockResolvedValue({ message: 'Server error' })
-      });
+      server.use(
+        http.put(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return new HttpResponse(null, { status: 500 });
+        })
+      );
 
       await user.click(screen.getByText('Zapisz zmiany'));
 
@@ -284,6 +337,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should allow canceling edit', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -316,6 +375,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should complete full delete flow successfully', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -335,10 +400,11 @@ describe('Recipe Management Integration Tests', () => {
       expect(screen.getByText('Potwierdź usunięcie')).toBeInTheDocument();
 
       // Mock successful deletion
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({ message: 'Recipe deleted' })
-      });
+      server.use(
+        http.delete(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return new HttpResponse(null, { status: 204 });
+        })
+      );
 
       // Confirm deletion
       await user.click(screen.getByText('Usuń przepis'));
@@ -352,6 +418,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should allow canceling deletion', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -376,6 +448,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should handle delete server errors', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -390,11 +468,11 @@ describe('Recipe Management Integration Tests', () => {
       await user.click(screen.getByText('Usuń'));
 
       // Mock server error
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 403,
-        json: vi.fn().mockResolvedValue({ message: 'Forbidden' })
-      });
+      server.use(
+        http.delete(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return new HttpResponse(null, { status: 500 });
+        })
+      );
 
       await user.click(screen.getByText('Usuń przepis'));
 
@@ -412,10 +490,15 @@ describe('Recipe Management Integration Tests', () => {
     it('should allow non-author to rate recipe', async () => {
       const user = userEvent.setup();
       
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: vi.fn().mockResolvedValue(mockNonOwnedRecipe)
-      });
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-2`, () => {
+          return HttpResponse.json(mockNonOwnedRecipe);
+        }),
+        http.post(`${API_BASE_URL}/recipes/recipe-2/rate`, async ({ request }) => {
+          const body = await request.json();
+          return HttpResponse.json({ rating: (body as any).rating });
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -432,15 +515,6 @@ describe('Recipe Management Integration Tests', () => {
       const ratingSection = screen.getByText('Oceń przepis').closest('div');
       expect(ratingSection).toBeInTheDocument();
 
-      // Mock successful rating submission
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: vi.fn().mockResolvedValue({
-          average_rating: 4.2,
-          total_votes: 11
-        })
-      });
-
       // Click on 4-star rating
       const stars = within(ratingSection!).getAllByRole('button');
       await user.click(stars[3]); // 4th star (0-indexed)
@@ -456,6 +530,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should support keyboard shortcuts', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -485,6 +565,12 @@ describe('Recipe Management Integration Tests', () => {
     it('should handle keyboard navigation in modals', async () => {
       const user = userEvent.setup();
       
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -510,6 +596,12 @@ describe('Recipe Management Integration Tests', () => {
 
   describe('Accessibility', () => {
     it('should have proper ARIA labels and roles', async () => {
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
+
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -535,9 +627,13 @@ describe('Recipe Management Integration Tests', () => {
       expect(deleteButton).toHaveAttribute('aria-label');
     });
 
-    it('should announce loading states to screen readers', () => {
-      // Mock slow loading
-      mockFetch.mockImplementation(() => new Promise(() => {}));
+    it('should announce loading states to screen readers', async () => {
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, async () => {
+          await new Promise(resolve => setTimeout(resolve, 100)); // Simulate delay
+          return HttpResponse.json(mockRecipe);
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -552,6 +648,11 @@ describe('Recipe Management Integration Tests', () => {
     });
 
     it('should provide keyboard shortcuts information', async () => {
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
       render(
         <OptimizedRecipeManagementView
           recipeId="recipe-1"
@@ -570,7 +671,11 @@ describe('Recipe Management Integration Tests', () => {
 
   describe('Error Handling', () => {
     it('should handle network errors gracefully', async () => {
-      mockFetch.mockRejectedValue(new Error('Network error'));
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, async () => {
+          throw new Error('Network error');
+        })
+      );
 
       render(
         <OptimizedRecipeManagementView
@@ -609,6 +714,12 @@ describe('Recipe Management Integration Tests', () => {
         renderSpy();
         return <>{children}</>;
       };
+
+      server.use(
+        http.get(`${API_BASE_URL}/recipes/recipe-1`, () => {
+          return HttpResponse.json(mockRecipe);
+        })
+      );
 
       const { rerender } = render(
         <TestWrapper>

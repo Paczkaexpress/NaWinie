@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ErrorBoundary, { RecipeErrorBoundary, withErrorBoundary } from '../components/ErrorBoundary';
 import React from 'react';
 
@@ -98,26 +98,35 @@ describe('ErrorBoundary', () => {
     );
   });
 
-  it('should handle retry button click', () => {
-    const { rerender } = render(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={true} />
-      </ErrorBoundary>
-    );
+  it('should handle retry button click', async () => {
+    const TestHarness = () => {
+      const [shouldThrow, setShouldThrow] = React.useState(true);
+      const handleRetry = () => setShouldThrow(false);
 
+      return (
+        <ErrorBoundary onRetry={handleRetry}>
+          <ThrowError shouldThrow={shouldThrow} />
+        </ErrorBoundary>
+      );
+    };
+
+    render(<TestHarness />);
+
+    // Initially, the error boundary should be showing the fallback UI
     expect(screen.getByText('Ups! Coś poszło nie tak')).toBeInTheDocument();
+    expect(screen.queryByText('No error')).not.toBeInTheDocument();
 
-    // Click retry button
+    // Click the retry button
     fireEvent.click(screen.getByText('Spróbuj ponownie'));
 
-    // Re-render with no error
-    rerender(
-      <ErrorBoundary>
-        <ThrowError shouldThrow={false} />
-      </ErrorBoundary>
-    );
+    // After clicking retry, the harness component's state changes,
+    // and the ThrowError component should no longer throw.
+    // The ErrorBoundary should now render its child.
+    await waitFor(() => {
+      expect(screen.getByText('No error')).toBeInTheDocument();
+    });
 
-    expect(screen.getByText('Safe component')).toBeInTheDocument();
+    expect(screen.queryByText('Ups! Coś poszło nie tak')).not.toBeInTheDocument();
   });
 
   it('should handle reload button click', () => {

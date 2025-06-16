@@ -83,7 +83,7 @@ const OptimizedRecipeManagementView: React.FC<RecipeManagementViewProps> = ({
 
   const handleDeleteRecipe = useCallback(async () => {
     try {
-      const recipeName = currentRecipe?.name || 'przepis';
+      const recipeName = recipe?.name || 'przepis';
       await deleteRecipe();
       showRecipeDeleted(recipeName);
       setTimeout(() => {
@@ -98,7 +98,7 @@ const OptimizedRecipeManagementView: React.FC<RecipeManagementViewProps> = ({
         showRecipeError('usuwania przepisu', error?.message);
       }
     }
-  }, [deleteRecipe, showRecipeDeleted, showRecipeError, showAuthError, showPermissionError]);
+  }, [deleteRecipe, recipe?.name, showRecipeDeleted, showRecipeError, showAuthError, showPermissionError]);
 
   // Keyboard navigation implementation
   useEffect(() => {
@@ -252,7 +252,7 @@ const OptimizedRecipeManagementView: React.FC<RecipeManagementViewProps> = ({
         ref={containerRef}
         className="max-w-4xl mx-auto animate-fadeIn"
         tabIndex={-1}
-        role="main"
+        role="region"
         aria-labelledby="recipe-title"
         aria-describedby="recipe-description"
       >
