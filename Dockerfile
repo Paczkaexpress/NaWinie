@@ -24,7 +24,6 @@ RUN npm install --include=optional
 
 # Copy frontend source code
 COPY src/ ./src/
-COPY public/ ./public/
 
 # Copy .env file if it exists (for local development)
 COPY .env* ./
