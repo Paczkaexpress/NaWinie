@@ -147,11 +147,14 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // Convert complexity level to uppercase
+    // Convert complexity level to uppercase (handle both uppercase and lowercase)
     const complexityMap: { [key: string]: string } = {
       'EASY': 'EASY',
       'MEDIUM': 'MEDIUM', 
-      'HARD': 'HARD'
+      'HARD': 'HARD',
+      'easy': 'EASY',
+      'medium': 'MEDIUM', 
+      'hard': 'HARD'
     };
     const dbComplexityLevel = complexityMap[recipeData.complexity_level] || 'EASY';
     console.log('🔄 Converting complexity level:', recipeData.complexity_level, '→', dbComplexityLevel);
@@ -178,6 +181,29 @@ export const POST: APIRoute = async ({ request }) => {
     const recipeId = crypto.randomUUID();
     console.log('🆔 Generated recipe ID:', recipeId);
 
+    // Handle image upload if present
+    let imageData: string | null = null;
+    if (imageFile && imageFile.size > 0) {
+      console.log('🖼️ Processing image file...');
+      try {
+        // Convert image to base64 for storage in database
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
+        const base64 = btoa(String.fromCharCode(...uint8Array));
+        imageData = `data:${imageFile.type};base64,${base64}`;
+        
+        console.log('✅ Image processed successfully:', {
+          type: imageFile.type,
+          size: imageFile.size,
+          base64Length: base64.length
+        });
+      } catch (error) {
+        console.error('❌ Image processing error:', error);
+        // Continue without image rather than failing the whole request
+        console.log('⚠️ Continuing recipe creation without image');
+      }
+    }
+
     // Prepare recipe data for insertion
     const recipeToInsert = {
       id: recipeId,
@@ -185,10 +211,14 @@ export const POST: APIRoute = async ({ request }) => {
       preparation_time_minutes: recipeData.preparation_time_minutes,
       complexity_level: dbComplexityLevel,
       steps: recipeData.steps,
-      author_id: user.id
+      author_id: user.id,
+      ...(imageData && { image_data: imageData })
     };
 
-    console.log('💾 Inserting recipe with data:', recipeToInsert);
+    console.log('💾 Inserting recipe with data:', {
+      ...recipeToInsert,
+      image_data: imageData ? `[Base64 data: ${imageData.substring(0, 50)}...]` : null
+    });
 
     // Insert recipe into database
     const { data: recipe, error: insertError } = await supabase
@@ -253,7 +283,8 @@ export const POST: APIRoute = async ({ request }) => {
         message: 'Przepis został pomyślnie utworzony',
         recipe: {
           id: recipe.id,
-          name: recipe.name
+          name: recipe.name,
+          image_data: recipe.image_data
         }
       }),
       { 
