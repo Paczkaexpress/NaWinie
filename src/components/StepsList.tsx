@@ -25,7 +25,7 @@ function StepItem({ step, isActive = false }: StepItemProps) {
         {stepNumber}
       </div>
       <div className="flex-1">
-        <p className={`text-gray-900 leading-relaxed ${isActive ? 'font-medium' : ''}`}>
+        <p className={`text-gray-900 leading-relaxed ${isActive ? 'font-MEDIUM' : ''}`}>
           {description}
         </p>
       </div>

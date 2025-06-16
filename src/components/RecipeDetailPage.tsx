@@ -189,7 +189,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
       {/* Back Button */}
       <button
         onClick={() => window.history.back()}
-        className="inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
+        className="inline-flex items-center px-4 py-2 mb-6 text-sm font-MEDIUM text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
       >
         <svg 
           className="w-4 h-4 mr-2" 
@@ -250,7 +250,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
               {renderStars(recipe.average_rating || 0)}
-              <span className="text-lg font-medium text-gray-700">
+              <span className="text-lg font-MEDIUM text-gray-700">
                 {recipe.average_rating ? recipe.average_rating.toFixed(1) : '0.0'}
               </span>
               <span className="text-sm text-gray-500">
@@ -265,21 +265,21 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span><span className="font-medium">Prep Time:</span> {recipe?.preparation_time_minutes || 0} min</span>
+              <span><span className="font-MEDIUM">Prep Time:</span> {recipe?.preparation_time_minutes || 0} min</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span><span className="font-medium">Difficulty:</span>{' '}
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  (recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'bg-green-100 text-green-800' :
-                  (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'bg-yellow-100 text-yellow-800' :
+              <span><span className="font-MEDIUM">Difficulty:</span>{' '}
+                <span className={`px-2 py-1 rounded text-xs font-MEDIUM ${
+                  (recipe?.difficulty_level === 'EASY' || recipe?.complexity_level === 'EASY') ? 'bg-green-100 text-green-800' :
+                  (recipe?.difficulty_level === 'MEDIUM' || recipe?.complexity_level === 'MEDIUM') ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {(recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'Łatwy' : 
-                   (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'Średni' : 
-                   (recipe?.difficulty_level === 'hard' || recipe?.complexity_level === 'hard') ? 'Trudny' : 'nieznany'}
+                  {(recipe?.difficulty_level === 'EASY' || recipe?.complexity_level === 'EASY') ? 'Łatwy' : 
+                   (recipe?.difficulty_level === 'MEDIUM' || recipe?.complexity_level === 'MEDIUM') ? 'Średni' : 
+                   (recipe?.difficulty_level === 'HARD' || recipe?.complexity_level === 'HARD') ? 'Trudny' : 'nieznany'}
                 </span>
               </span>
             </div>
@@ -287,7 +287,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span><span className="font-medium">Servings:</span> {recipe?.servings || 1}</span>
+              <span><span className="font-MEDIUM">Servings:</span> {recipe?.servings || 1}</span>
             </div>
           </div>
 
@@ -305,7 +305,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <p className="text-green-800 font-medium">Dziękujemy za ocenę przepisu!</p>
+            <p className="text-green-800 font-MEDIUM">Dziękujemy za ocenę przepisu!</p>
           </div>
         </div>
       )}
@@ -326,7 +326,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
                 <li key={index} className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 transition-colors">
                   <span className="flex-shrink-0 w-2 h-2 bg-orange-400 rounded-full mt-2"></span>
                   <div className="flex-1">
-                    <span className={`font-medium ${ingredient?.is_optional ? 'text-gray-600 italic' : 'text-gray-800'}`}>
+                    <span className={`font-MEDIUM ${ingredient?.is_optional ? 'text-gray-600 italic' : 'text-gray-800'}`}>
                       {ingredient?.amount || 0} {ingredient?.unit_type || 'unit'} {ingredient?.name || 'Unknown ingredient'}
                       {ingredient?.is_optional && (
                         <span className="text-xs text-gray-500 ml-2 px-2 py-1 bg-gray-100 rounded-full">optional</span>
@@ -334,7 +334,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
                     </span>
                     {ingredient?.substitute_recommendation && (
                       <p className="text-sm text-gray-500 mt-1">
-                        <span className="font-medium">Alternative:</span> {ingredient.substitute_recommendation}
+                        <span className="font-MEDIUM">Alternative:</span> {ingredient.substitute_recommendation}
                       </p>
                     )}
                   </div>
@@ -364,7 +364,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Your rating:</label>
+                <label className="block text-sm font-MEDIUM text-gray-700 mb-2">Your rating:</label>
                 <div className="flex items-center gap-1">
                   {renderStars(selectedRating || 0, true, setSelectedRating)}
                 </div>
@@ -372,7 +372,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <button
                 onClick={handleRatingSubmit}
                 disabled={!selectedRating || isSubmittingRating}
-                className="w-full px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 bg-orange-600 text-white font-MEDIUM rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isSubmittingRating ? (
                   <>
@@ -398,7 +398,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             </p>
             <a 
               href="/auth" 
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-MEDIUM rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
               Log in to rate
             </a>
@@ -444,7 +444,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(recipe.nutrition_facts).map(([key, value]) => (
               <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="font-medium text-gray-900 capitalize text-sm">
+                <div className="font-MEDIUM text-gray-900 capitalize text-sm">
                   {key.replace('_', ' ')}
                 </div>
                 <div className="text-2xl font-bold text-blue-600 mt-1">{String(value)}</div>
@@ -477,7 +477,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               alert('Nie można skopiować linku. Proszę skopiować URL ręcznie.');
             }
           }}
-          className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-colors duration-200"
+          className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-MEDIUM rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-colors duration-200"
         >
           <svg 
             className="w-4 h-4 mr-2" 
@@ -499,7 +499,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
         {/* Copy Link Success Message */}
         {showLinkCopied && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">Link do przepisu został skopiowany!</p>
+            <p className="text-green-800 font-MEDIUM">Link do przepisu został skopiowany!</p>
           </div>
         )}
       </div>

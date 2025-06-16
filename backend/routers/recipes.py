@@ -44,7 +44,7 @@ def get_recipe_service(db: Session = Depends(get_db)) -> RecipeService:
     ### Query Parameters:
     - `page`: Page number (default: 1, min: 1)
     - `limit`: Items per page (default: 10, min: 1, max: 100)
-    - `complexity`: Filter by difficulty (easy, medium, hard)
+    - `complexity`: Filter by difficulty (EASY, MEDIUM, HARD)
     - `authorId`: Filter by recipe author UUID
     - `sortBy`: Sort field (name, rating, prep_time, created_at)
     - `sortOrder`: Sort direction (asc, desc)
@@ -57,7 +57,7 @@ def get_recipe_service(db: Session = Depends(get_db)) -> RecipeService:
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "Spaghetti Carbonara",
                 "preparation_time_minutes": 30,
-                "complexity_level": "medium",
+                "complexity_level": "MEDIUM",
                 "author_id": "123e4567-e89b-12d3-a456-426614174001",
                 "average_rating": 4.5,
                 "total_votes": 12,
@@ -84,7 +84,7 @@ def get_recipe_service(db: Session = Depends(get_db)) -> RecipeService:
                                 "id": "123e4567-e89b-12d3-a456-426614174000",
                                 "name": "Spaghetti Carbonara", 
                                 "preparation_time_minutes": 30,
-                                "complexity_level": "medium",
+                                "complexity_level": "MEDIUM",
                                 "author_id": "123e4567-e89b-12d3-a456-426614174001",
                                 "average_rating": 4.5,
                                 "total_votes": 12,
@@ -131,7 +131,7 @@ def get_recipe_service(db: Session = Depends(get_db)) -> RecipeService:
 async def get_recipes(
     page: int = Query(1, ge=1, description="Page number (starting from 1)"),
     limit: int = Query(10, ge=1, le=100, description="Number of items per page (max 100)"),
-    complexity: Optional[str] = Query(None, description="Filter by complexity: easy, medium, hard"),
+    complexity: Optional[str] = Query(None, description="Filter by complexity: EASY, MEDIUM, HARD"),
     authorId: Optional[UUID] = Query(None, description="Filter by author UUID"),
     sortBy: Optional[str] = Query("created_at", description="Sort field: name, rating, prep_time, created_at"),
     sortOrder: Optional[str] = Query("desc", description="Sort order: asc, desc"),
@@ -206,7 +206,7 @@ async def get_recipes(
                 "id": "123e4567-e89b-12d3-a456-426614174000",
                 "name": "Spaghetti Carbonara",
                 "preparation_time_minutes": 30,
-                "complexity_level": "medium", 
+                "complexity_level": "MEDIUM", 
                 "author_id": "123e4567-e89b-12d3-a456-426614174001",
                 "average_rating": 4.5,
                 "total_votes": 12,
@@ -233,7 +233,7 @@ async def get_recipes(
                                 "id": "123e4567-e89b-12d3-a456-426614174000",
                                 "name": "Spaghetti Carbonara",
                                 "preparation_time_minutes": 30,
-                                "complexity_level": "medium",
+                                "complexity_level": "MEDIUM",
                                 "author_id": "123e4567-e89b-12d3-a456-426614174001", 
                                 "average_rating": 4.5,
                                 "total_votes": 12,
@@ -319,7 +319,7 @@ async def find_recipes_by_ingredients(
     ### Request Body:
     - `name`: Recipe name (1-255 characters, required)
     - `preparation_time_minutes`: Prep time in minutes (positive integer, required)
-    - `complexity_level`: Difficulty level (easy/medium/hard, required)
+    - `complexity_level`: Difficulty level (EASY/MEDIUM/HARD, required)
     - `steps`: List of preparation steps with order and description (required)
     - `ingredients`: List of ingredients with amounts and optional flags (required)
     
@@ -328,7 +328,7 @@ async def find_recipes_by_ingredients(
     {
         "name": "Classic Spaghetti Carbonara",
         "preparation_time_minutes": 30,
-        "complexity_level": "medium",
+        "complexity_level": "MEDIUM",
         "steps": [
             {"step": 1, "description": "Boil water for pasta"},
             {"step": 2, "description": "Cook spaghetti al dente"},
@@ -355,7 +355,7 @@ async def find_recipes_by_ingredients(
                             "id": "123e4567-e89b-12d3-a456-426614174000",
                             "name": "Classic Spaghetti Carbonara",
                             "preparation_time_minutes": 30,
-                            "complexity_level": "medium",
+                            "complexity_level": "MEDIUM",
                             "steps": [
                                 {"step": 1, "description": "Boil water for pasta"}
                             ],
@@ -477,7 +477,7 @@ async def create_recipe(
             "id": "123e4567-e89b-12d3-a456-426614174000",
             "name": "Classic Spaghetti Carbonara",
             "preparation_time_minutes": 30,
-            "complexity_level": "medium",
+            "complexity_level": "MEDIUM",
             "steps": [
                 {"step": 1, "description": "Boil water for pasta"},
                 {"step": 2, "description": "Cook spaghetti al dente"}
@@ -511,7 +511,7 @@ async def create_recipe(
                             "id": "123e4567-e89b-12d3-a456-426614174000",
                             "name": "Classic Spaghetti Carbonara",
                             "preparation_time_minutes": 30,
-                            "complexity_level": "medium",
+                            "complexity_level": "MEDIUM",
                             "steps": [{"step": 1, "description": "Boil water for pasta"}],
                             "author_id": "123e4567-e89b-12d3-a456-426614174001",
                             "average_rating": 4.5,
@@ -612,7 +612,7 @@ async def get_recipe_by_id(
     ### Request Body (all fields optional):
     - `name`: New recipe name (1-255 characters)
     - `preparation_time_minutes`: New prep time (positive integer)
-    - `complexity_level`: New difficulty level (easy/medium/hard)
+    - `complexity_level`: New difficulty level (EASY/MEDIUM/HARD)
     - `steps`: New preparation steps list
     - `ingredients`: New ingredients list with amounts
     
@@ -621,7 +621,7 @@ async def get_recipe_by_id(
     {
         "name": "Updated Classic Spaghetti Carbonara",
         "preparation_time_minutes": 25,
-        "complexity_level": "easy"
+        "complexity_level": "EASY"
     }
     ```
     """,
@@ -635,7 +635,7 @@ async def get_recipe_by_id(
                             "id": "123e4567-e89b-12d3-a456-426614174000",
                             "name": "Updated Classic Spaghetti Carbonara",
                             "preparation_time_minutes": 25,
-                            "complexity_level": "easy",
+                            "complexity_level": "EASY",
                             "steps": [{"step": 1, "description": "Boil water for pasta"}],
                             "author_id": "123e4567-e89b-12d3-a456-426614174001",
                             "average_rating": 4.5,

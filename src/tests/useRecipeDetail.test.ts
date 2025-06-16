@@ -24,7 +24,7 @@ describe('useRecipeDetail', () => {
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Test Recipe',
       preparation_time_minutes: 30,
-      complexity_level: 'easy' as const,
+      complexity_level: 'EASY' as const,
       author_id: 'author-123',
       average_rating: 4.5,
       total_votes: 10,

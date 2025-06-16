@@ -275,7 +275,7 @@ class PerformanceLogger:
             affected_rows=affected_rows
         )
 
-# Export logger instances for easy import
+# Export logger instances for EASY import
 __all__ = [
     'recipe_logger',
     'rating_logger', 

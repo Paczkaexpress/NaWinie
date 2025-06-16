@@ -144,7 +144,7 @@ deploy:
 ## Best Practices
 
 1. **Keep workflows fast**: Use caching and parallel jobs
-2. **Secure secrets**: Never hardcode sensitive information
+2. **Secure secrets**: Never HARDcode sensitive information
 3. **Version pin actions**: Use specific versions for stability
 4. **Monitor resource usage**: Be mindful of GitHub Actions minutes
 5. **Regular updates**: Keep actions and dependencies up to date

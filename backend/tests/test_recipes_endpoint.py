@@ -118,7 +118,7 @@ class TestRecipeListEndpoint:
     def test_get_recipes_filter_by_complexity(self, client: TestClient, db_session: Session, test_user: User):
         """Test filtering by complexity level"""
         # Create recipes with different complexity levels
-        easy_recipe = Recipe(
+        EASY_recipe = Recipe(
             id=uuid.uuid4(),
             name="Easy Recipe",
             preparation_time_minutes=15,
@@ -126,7 +126,7 @@ class TestRecipeListEndpoint:
             steps=[{"step": 1, "description": "Easy step"}],
             author_id=test_user.id
         )
-        hard_recipe = Recipe(
+        HARD_recipe = Recipe(
             id=uuid.uuid4(),
             name="Hard Recipe",
             preparation_time_minutes=60,
@@ -135,22 +135,22 @@ class TestRecipeListEndpoint:
             author_id=test_user.id
         )
         
-        db_session.add_all([easy_recipe, hard_recipe])
+        db_session.add_all([EASY_recipe, HARD_recipe])
         db_session.commit()
         
-        # Test filter by easy
-        response = client.get("/api/recipes/?complexity=easy")
+        # Test filter by EASY
+        response = client.get("/api/recipes/?complexity=EASY")
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 1
-        assert data["data"][0]["complexity_level"] == "easy"
+        assert data["data"][0]["complexity_level"] == "EASY"
         
-        # Test filter by hard
-        response = client.get("/api/recipes/?complexity=hard")
+        # Test filter by HARD
+        response = client.get("/api/recipes/?complexity=HARD")
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 1
-        assert data["data"][0]["complexity_level"] == "hard"
+        assert data["data"][0]["complexity_level"] == "HARD"
 
 
 class TestRecipeCreateEndpoint:
@@ -170,7 +170,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "Test Recipe",
             "preparation_time_minutes": 30,
-            "complexity_level": "medium",
+            "complexity_level": "MEDIUM",
             "steps": [
                 {"step": 1, "description": "First step"},
                 {"step": 2, "description": "Second step"}
@@ -193,7 +193,7 @@ class TestRecipeCreateEndpoint:
         
         assert recipe_response["name"] == "Test Recipe"
         assert recipe_response["preparation_time_minutes"] == 30
-        assert recipe_response["complexity_level"] == "medium"
+        assert recipe_response["complexity_level"] == "MEDIUM"
         assert len(recipe_response["steps"]) == 2
         assert len(recipe_response["ingredients"]) == 1
         assert recipe_response["author_id"] == str(test_user.id)
@@ -205,7 +205,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "Test Recipe",
             "preparation_time_minutes": 30,
-            "complexity_level": "easy",
+            "complexity_level": "EASY",
             "steps": [{"step": 1, "description": "Step 1"}],
             "ingredients": []
         }
@@ -220,7 +220,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "Test Recipe",
             "preparation_time_minutes": 30,
-            "complexity_level": "easy",
+            "complexity_level": "EASY",
             "steps": [{"step": 1, "description": "Step 1"}],
             "ingredients": [
                 {
@@ -241,7 +241,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "",
             "preparation_time_minutes": 30,
-            "complexity_level": "easy",
+            "complexity_level": "EASY",
             "steps": [{"step": 1, "description": "Step 1"}],
             "ingredients": []
         }
@@ -252,7 +252,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "Valid Name",
             "preparation_time_minutes": 0,
-            "complexity_level": "easy",
+            "complexity_level": "EASY",
             "steps": [{"step": 1, "description": "Step 1"}],
             "ingredients": []
         }
@@ -274,7 +274,7 @@ class TestRecipeCreateEndpoint:
         recipe_data = {
             "name": "Valid Name",
             "preparation_time_minutes": 30,
-            "complexity_level": "easy",
+            "complexity_level": "EASY",
             "steps": [],
             "ingredients": []
         }
@@ -334,7 +334,7 @@ class TestRecipeDetailEndpoint:
         assert recipe_data["id"] == str(recipe.id)
         assert recipe_data["name"] == "Test Recipe"
         assert recipe_data["preparation_time_minutes"] == 30
-        assert recipe_data["complexity_level"] == "medium"
+        assert recipe_data["complexity_level"] == "MEDIUM"
         assert len(recipe_data["steps"]) == 2
         assert recipe_data["steps"][0]["step"] == 1
         assert recipe_data["steps"][0]["description"] == "First step"
@@ -379,7 +379,7 @@ class TestRecipeUpdateEndpoint:
         update_data = {
             "name": "Updated Recipe",
             "preparation_time_minutes": 45,
-            "complexity_level": "medium"
+            "complexity_level": "MEDIUM"
         }
         
         response = client.put(f"/api/recipes/{recipe.id}", json=update_data, headers=auth_headers)
@@ -390,7 +390,7 @@ class TestRecipeUpdateEndpoint:
         
         assert recipe_data["name"] == "Updated Recipe"
         assert recipe_data["preparation_time_minutes"] == 45
-        assert recipe_data["complexity_level"] == "medium"
+        assert recipe_data["complexity_level"] == "MEDIUM"
     
     def test_update_recipe_unauthorized(self, client: TestClient, db_session: Session, test_user: User):
         """Test recipe update without authentication"""
@@ -867,12 +867,12 @@ class TestRecipeValidation:
         db_session.add_all(recipes)
         db_session.commit()
         
-        # Test filter by medium complexity, sort by prep time ascending
-        response = client.get("/api/recipes/?complexity=medium&sortBy=prep_time&sortOrder=asc")
+        # Test filter by MEDIUM complexity, sort by prep time ascending
+        response = client.get("/api/recipes/?complexity=MEDIUM&sortBy=prep_time&sortOrder=asc")
         assert response.status_code == 200
         data = response.json()
         assert len(data["data"]) == 1
-        assert data["data"][0]["complexity_level"] == "medium"
+        assert data["data"][0]["complexity_level"] == "MEDIUM"
         
         # Test sort by rating descending
         response = client.get("/api/recipes/?sortBy=rating&sortOrder=desc")

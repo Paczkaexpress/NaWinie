@@ -27,7 +27,7 @@ Authorization: Bearer <your_jwt_token>
 curl -X GET "http://localhost:8000/api/recipes?page=1&limit=10"
 
 # Filter by complexity and sort by rating
-curl -X GET "http://localhost:8000/api/recipes?complexity=easy&sortBy=rating&sortOrder=desc"
+curl -X GET "http://localhost:8000/api/recipes?complexity=EASY&sortBy=rating&sortOrder=desc"
 
 # Filter by author
 curl -X GET "http://localhost:8000/api/recipes?authorId=123e4567-e89b-12d3-a456-426614174001"
@@ -53,7 +53,7 @@ curl -X POST "http://localhost:8000/api/recipes" \
   -d '{
     "name": "Classic Spaghetti Carbonara",
     "preparation_time_minutes": 30,
-    "complexity_level": "medium",
+    "complexity_level": "MEDIUM",
     "steps": [
       {"step": 1, "description": "Boil water for pasta"},
       {"step": 2, "description": "Cook spaghetti al dente"},
@@ -159,7 +159,7 @@ curl -X DELETE "http://localhost:8000/api/recipes/123e4567-e89b-12d3-a456-426614
       "id": "123e4567-e89b-12d3-a456-426614174000",
       "name": "Spaghetti Carbonara",
       "preparation_time_minutes": 30,
-      "complexity_level": "medium",
+      "complexity_level": "MEDIUM",
       "author_id": "123e4567-e89b-12d3-a456-426614174001",
       "average_rating": 4.5,
       "total_votes": 12,
@@ -182,7 +182,7 @@ curl -X DELETE "http://localhost:8000/api/recipes/123e4567-e89b-12d3-a456-426614
     "id": "123e4567-e89b-12d3-a456-426614174000",
     "name": "Classic Spaghetti Carbonara",
     "preparation_time_minutes": 30,
-    "complexity_level": "medium",
+    "complexity_level": "MEDIUM",
     "steps": [
       {"step": 1, "description": "Boil water for pasta"},
       {"step": 2, "description": "Cook spaghetti al dente"}

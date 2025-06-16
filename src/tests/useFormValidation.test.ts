@@ -7,7 +7,7 @@ describe('useFormValidation', () => {
   const mockFormData: CreateRecipeFormData = {
     name: '',
     preparation_time_minutes: 0,
-    complexity_level: 'easy',
+    complexity_level: 'EASY',
     steps: [],
     ingredients: [],
     image: undefined,
@@ -71,7 +71,7 @@ describe('useFormValidation', () => {
     const validFormData: CreateRecipeFormData = {
       name: 'Test Recipe',
       preparation_time_minutes: 30,
-      complexity_level: 'easy',
+      complexity_level: 'EASY',
       steps: [{ step: 1, description: 'First step' }],
       ingredients: [{ 
         ingredient_id: '1', 

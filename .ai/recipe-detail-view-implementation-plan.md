@@ -48,8 +48,8 @@ RecipeDetailPage (główny kontener)
 - **Główne elementy**: div z informacjami o czasie, trudności i ocenie, Badge komponenty z shadcn/ui
 - **Obsługiwane interakcje**: Wyświetlanie formatowanego czasu, kolorowego badge'a trudności
 - **Obsługiwana walidacja**: Sprawdzenie czy preparation_time_minutes > 0, czy complexity_level to valid enum
-- **Typy**: number (preparation_time_minutes), 'easy'|'medium'|'hard' (complexity_level), number (average_rating), number (total_votes)
-- **Propsy**: prepTime: number, difficulty: 'easy'|'medium'|'hard', averageRating: number, totalVotes: number
+- **Typy**: number (preparation_time_minutes), 'EASY'|'MEDIUM'|'HARD' (complexity_level), number (average_rating), number (total_votes)
+- **Propsy**: prepTime: number, difficulty: 'EASY'|'MEDIUM'|'HARD', averageRating: number, totalVotes: number
 
 ### IngredientsList
 - **Opis komponentu**: Lista wszystkich składników wymaganych do przepisu

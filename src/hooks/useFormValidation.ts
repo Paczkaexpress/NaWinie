@@ -42,7 +42,7 @@ export const useFormValidation = (): UseFormValidationReturn => {
   }, []);
 
   const validateComplexityLevel = useCallback((level: string): string | null => {
-    const validLevels = ['easy', 'medium', 'hard'];
+    const validLevels = ['EASY', 'MEDIUM', 'HARD'];
     if (!validLevels.includes(level)) {
       return 'Wybierz poziom trudności';
     }

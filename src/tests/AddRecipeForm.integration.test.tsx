@@ -9,7 +9,7 @@ vi.mock('../hooks/useAddRecipeForm', () => ({
     formData: {
       name: '',
       preparation_time_minutes: 0,
-      complexity_level: 'easy',
+      complexity_level: 'EASY',
       steps: [],
       ingredients: [],
       image: undefined,

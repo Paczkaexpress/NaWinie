@@ -34,7 +34,7 @@ export const PrepTimeDisplay = memo(function PrepTimeDisplay({ prepTime, classNa
           d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
         />
       </svg>
-      <span className="text-sm font-medium">
+      <span className="text-sm font-MEDIUM">
         {formattedTime}
       </span>
     </div>
@@ -42,24 +42,24 @@ export const PrepTimeDisplay = memo(function PrepTimeDisplay({ prepTime, classNa
 });
 
 interface DifficultyBadgeProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   className?: string;
 }
 
 export const DifficultyBadge = memo(function DifficultyBadge({ difficulty, className = '' }: DifficultyBadgeProps) {
   const difficultyConfig = useMemo(() => {
     switch (difficulty) {
-      case 'easy':
+      case 'EASY':
         return {
           text: 'Łatwy',
           className: 'bg-green-100 text-green-800 border-green-200',
         };
-      case 'medium':
+      case 'MEDIUM':
         return {
           text: 'Średni',
           className: 'bg-yellow-100 text-yellow-800 border-yellow-200',
         };
-      case 'hard':
+      case 'HARD':
         return {
           text: 'Trudny',
           className: 'bg-red-100 text-red-800 border-red-200',
@@ -74,7 +74,7 @@ export const DifficultyBadge = memo(function DifficultyBadge({ difficulty, class
 
   return (
     <span 
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${difficultyConfig.className} ${className}`}
+      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-MEDIUM border ${difficultyConfig.className} ${className}`}
     >
       {difficultyConfig.text}
     </span>

@@ -58,7 +58,7 @@ const RecipeDetailsSection: React.FC<RecipeDetailsSectionProps> = ({
                     <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
                   </div>
                   <div>
-                    <span className="font-medium text-gray-900">
+                    <span className="font-MEDIUM text-gray-900">
                       {ingredient.name}
                     </span>
                     {ingredient.is_optional && (
@@ -69,7 +69,7 @@ const RecipeDetailsSection: React.FC<RecipeDetailsSectionProps> = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-medium text-gray-900">
+                  <div className="font-MEDIUM text-gray-900">
                     {ingredient.amount} {ingredient.unit_type}
                   </div>
                   {ingredient.substitute_recommendation && (
@@ -119,13 +119,13 @@ const RecipeDetailsSection: React.FC<RecipeDetailsSectionProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-600 mb-1">Autor</div>
-              <div className="font-medium text-gray-900">
+              <div className="font-MEDIUM text-gray-900">
                 {recipe.author_id}
               </div>
             </div>
             <div className="p-4 bg-gray-50 rounded-lg">
               <div className="text-sm text-gray-600 mb-1">Data utworzenia</div>
-              <div className="font-medium text-gray-900">
+              <div className="font-MEDIUM text-gray-900">
                 {new Date(recipe.created_at).toLocaleDateString('pl-PL', {
                   year: 'numeric',
                   month: 'long',
@@ -136,7 +136,7 @@ const RecipeDetailsSection: React.FC<RecipeDetailsSectionProps> = ({
             {recipe.updated_at && new Date(recipe.updated_at) > new Date(recipe.created_at) && (
               <div className="p-4 bg-gray-50 rounded-lg">
                 <div className="text-sm text-gray-600 mb-1">Ostatnia modyfikacja</div>
-                <div className="font-medium text-gray-900">
+                <div className="font-MEDIUM text-gray-900">
                   {new Date(recipe.updated_at).toLocaleDateString('pl-PL', {
                     year: 'numeric',
                     month: 'long',

@@ -143,7 +143,7 @@ const IngredientSearchInput: React.FC<IngredientSearchInputProps> = ({
           error ? 'border-red-300' : 'border-gray-300'
         }`}>
           <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-900">
+            <span className="text-sm font-MEDIUM text-gray-900">
               {selectedIngredient.name}
             </span>
             <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">

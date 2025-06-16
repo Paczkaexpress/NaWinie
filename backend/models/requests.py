@@ -41,9 +41,9 @@ class AddUserDefaultIngredientCommand(BaseModel):
 # === Recipe Request Models ===
 
 class ComplexityLevel(str, Enum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
+    EASY = "EASY"
+    MEDIUM = "MEDIUM"
+    HARD = "HARD"
 
 class SortField(str, Enum):
     NAME = "name"

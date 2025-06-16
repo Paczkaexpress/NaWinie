@@ -100,7 +100,7 @@ class ErrorBoundary extends Component<Props, State> {
               {/* Error Details (only in development) */}
               {process.env.NODE_ENV === 'development' && this.state.error && (
                 <details className="mb-6 text-left">
-                  <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                  <summary className="cursor-pointer text-sm font-MEDIUM text-gray-700 hover:text-gray-900">
                     Szczegóły błędu (tryb deweloperski)
                   </summary>
                   <div className="mt-2 p-4 bg-gray-100 rounded text-xs font-mono text-gray-800 overflow-auto max-h-40">
@@ -125,21 +125,21 @@ class ErrorBoundary extends Component<Props, State> {
               <div className="space-y-3">
                 <button
                   onClick={this.handleRetry}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-MEDIUM py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   aria-label="Spróbuj ponownie załadować komponent"
                 >
                   Spróbuj ponownie
                 </button>
                 <button
                   onClick={this.handleReload}
-                  className="w-full bg-gray-600 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className="w-full bg-gray-600 hover:bg-gray-700 text-white font-MEDIUM py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                   aria-label="Odśwież całą stronę"
                 >
                   Odśwież stronę
                 </button>
                 <button
                   onClick={() => window.history.back()}
-                  className="w-full text-gray-600 hover:text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                  className="w-full text-gray-600 hover:text-gray-800 font-MEDIUM py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                   aria-label="Wróć do poprzedniej strony"
                 >
                   Wróć

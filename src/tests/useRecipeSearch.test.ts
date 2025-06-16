@@ -21,12 +21,12 @@ describe("useRecipeSearch", () => {
 
   it("fetches first page and loadMore continues pagination", async () => {
     const mockResponsePage1 = {
-      data: [{ id: "r1", name: "Recipe 1", average_rating: 4, preparation_time_minutes: 10, complexity_level: "easy", created_at: "", updated_at: "" }],
+      data: [{ id: "r1", name: "Recipe 1", average_rating: 4, preparation_time_minutes: 10, complexity_level: "EASY", created_at: "", updated_at: "" }],
       pagination: { page: 1, limit: 10, total_items: 2, total_pages: 2 },
     };
 
     const mockResponsePage2 = {
-      data: [{ id: "r2", name: "Recipe 2", average_rating: 5, preparation_time_minutes: 20, complexity_level: "easy", created_at: "", updated_at: "" }],
+      data: [{ id: "r2", name: "Recipe 2", average_rating: 5, preparation_time_minutes: 20, complexity_level: "EASY", created_at: "", updated_at: "" }],
       pagination: { page: 2, limit: 10, total_items: 2, total_pages: 2 },
     };
 

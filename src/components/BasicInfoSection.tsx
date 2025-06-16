@@ -4,7 +4,7 @@ export interface BasicInfoSectionProps {
   values: {
     name: string;
     preparation_time_minutes: number;
-    complexity_level: 'easy' | 'medium' | 'hard';
+    complexity_level: 'EASY' | 'MEDIUM' | 'HARD';
   };
   onChange: (field: string, value: any) => void;
   errors: {
@@ -24,9 +24,9 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
     return <div>Loading...</div>;
   }
   const complexityOptions = [
-    { value: 'easy', label: 'Łatwy' },
-    { value: 'medium', label: 'Średni' },
-    { value: 'hard', label: 'Trudny' }
+    { value: 'EASY', label: 'Łatwy' },
+    { value: 'MEDIUM', label: 'Średni' },
+    { value: 'HARD', label: 'Trudny' }
   ];
 
   return (
@@ -38,7 +38,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
       <div className="space-y-4">
         {/* Recipe Name */}
         <div>
-          <label htmlFor="recipeName" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="recipeName" className="block text-sm font-MEDIUM text-gray-700 mb-1">
             Nazwa przepisu *
           </label>
           <input
@@ -64,7 +64,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Preparation Time */}
           <div>
-            <label htmlFor="preparationTime" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="preparationTime" className="block text-sm font-MEDIUM text-gray-700 mb-1">
               Czas przygotowania (minuty) *
             </label>
             <input
@@ -86,15 +86,15 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
 
           {/* Complexity Level */}
           <div>
-            <label htmlFor="complexityLevel" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="complexityLevel" className="block text-sm font-MEDIUM text-gray-700 mb-1">
               Poziom trudności *
             </label>
             <select
               id="complexityLevel"
               key={`complexity-${values.complexity_level}`}
-              defaultValue={values.complexity_level || 'easy'}
+              defaultValue={values.complexity_level || 'EASY'}
               onChange={(e) => {
-                const selectedValue = e.target.value as 'easy' | 'medium' | 'hard';
+                const selectedValue = e.target.value as 'EASY' | 'MEDIUM' | 'HARD';
                 onChange('complexity_level', selectedValue);
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"

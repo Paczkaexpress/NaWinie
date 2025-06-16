@@ -76,7 +76,7 @@ export const useFormPersistence = ({
         return {
           name: parsedData.name || '',
           preparation_time_minutes: parsedData.preparation_time_minutes || 0,
-          complexity_level: parsedData.complexity_level || 'easy',
+          complexity_level: parsedData.complexity_level || 'EASY',
           ingredients: parsedData.ingredients || [],
           steps: parsedData.steps || [],
           image: undefined, // Never restore file objects
@@ -150,6 +150,6 @@ export const useFormPersistence = ({
     saveFormData,
     loadFormData,
     clearFormData,
-    hasSavedData: hasSavedData(),
+    hasSavedData: false, // Disable the restore functionality as requested
   };
 }; 

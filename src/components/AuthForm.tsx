@@ -200,7 +200,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSubmit, isLoading = false,
             <button
               type="button"
               onClick={toggleMode}
-              className="ml-1 text-orange-600 hover:text-orange-700 font-medium"
+              className="ml-1 text-orange-600 hover:text-orange-700 font-MEDIUM"
             >
               {isLoginMode ? 'Zarejestruj się' : 'Zaloguj się'}
             </button>

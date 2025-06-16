@@ -3,7 +3,7 @@ import { PrepTimeDisplay, DifficultyBadge, RatingDisplay } from './RecipeInfoCom
 
 interface RecipeInfoProps {
   prepTime: number;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
   averageRating: number;
   totalVotes: number;
   className?: string;
@@ -22,17 +22,17 @@ export default function RecipeInfo({
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="flex flex-col items-center sm:items-start">
-          <span className="text-sm font-medium text-gray-500 mb-2">Czas przygotowania</span>
+          <span className="text-sm font-MEDIUM text-gray-500 mb-2">Czas przygotowania</span>
           <PrepTimeDisplay prepTime={prepTime} />
         </div>
         
         <div className="flex flex-col items-center sm:items-start">
-          <span className="text-sm font-medium text-gray-500 mb-2">Poziom trudności</span>
+          <span className="text-sm font-MEDIUM text-gray-500 mb-2">Poziom trudności</span>
           <DifficultyBadge difficulty={difficulty} />
         </div>
         
         <div className="flex flex-col items-center sm:items-start">
-          <span className="text-sm font-medium text-gray-500 mb-2">Ocena użytkowników</span>
+          <span className="text-sm font-MEDIUM text-gray-500 mb-2">Ocena użytkowników</span>
           <RatingDisplay averageRating={averageRating} totalVotes={totalVotes} />
         </div>
       </div>

@@ -11,55 +11,48 @@ const EnhancedAddRecipeForm: React.FC<EnhancedAddRecipeFormProps> = () => {
   const [announcement, setAnnouncement] = React.useState<string>('');
   const [formProgress, setFormProgress] = React.useState({ current: 0, total: 4 });
 
-  // Calculate form completion progress
+  // Calculate form completion progress based on form data
   const calculateProgress = React.useCallback(() => {
-    const formSteps = [
-      'Podstawowe informacje',
-      'Zdjęcie przepisu', 
-      'Składniki',
-      'Kroki przygotowania'
-    ];
-
-    // This would be connected to actual form state
-    // For now, we'll simulate progress tracking
     let completed = 0;
+    const total = 4;
     
-    // Check if basic info is filled
-    const nameInput = document.querySelector('input[name="name"]') as HTMLInputElement;
-    const timeInput = document.querySelector('input[name="preparation_time_minutes"]') as HTMLInputElement;
-    if (nameInput?.value && timeInput?.value) completed++;
+    // This will be connected to form state via custom events
+    const checkFormState = () => {
+      const state = JSON.parse(sessionStorage.getItem('current_recipe_form_state') || '{}');
+      
+      // Check if basic info is filled
+      if (state.name?.trim() && state.preparation_time_minutes > 0) completed++;
+      
+      // Check if image is uploaded
+      if (state.image) completed++;
+      
+      // Check if ingredients are added
+      if (state.ingredients?.length > 0) completed++;
+      
+      // Check if steps are added
+      if (state.steps?.length > 0) completed++;
+      
+      return completed;
+    };
 
-    // Check if image is uploaded
-    const imagePreview = document.querySelector('[data-testid="image-preview"]');
-    if (imagePreview) completed++;
-
-    // Check if ingredients are added
-    const ingredients = document.querySelectorAll('[data-testid="ingredient-item"]');
-    if (ingredients.length > 0) completed++;
-
-    // Check if steps are added
-    const recipeSteps = document.querySelectorAll('[data-testid="step-item"]');
-    if (recipeSteps.length > 0) completed++;
-
-    setFormProgress({ current: completed, total: 4 });
+    const currentProgress = checkFormState();
+    setFormProgress({ current: currentProgress, total });
   }, []);
 
-  // Monitor form changes for progress updates
+  // Monitor form changes for progress updates via custom events
   React.useEffect(() => {
-    const handleFormChange = () => {
+    const handleFormStateChange = () => {
       calculateProgress();
     };
 
-    // Add event listeners for form changes
-    document.addEventListener('input', handleFormChange);
-    document.addEventListener('change', handleFormChange);
-
+    // Listen for custom form state changes
+    window.addEventListener('recipeFormStateChange', handleFormStateChange);
+    
     // Initial calculation
-    const timer = setTimeout(calculateProgress, 1000);
+    const timer = setTimeout(calculateProgress, 500);
 
     return () => {
-      document.removeEventListener('input', handleFormChange);
-      document.removeEventListener('change', handleFormChange);
+      window.removeEventListener('recipeFormStateChange', handleFormStateChange);
       clearTimeout(timer);
     };
   }, [calculateProgress]);
@@ -171,25 +164,25 @@ const EnhancedAddRecipeForm: React.FC<EnhancedAddRecipeFormProps> = () => {
           {/* Keyboard Navigation Help */}
           <div className="mt-6 text-center">
             <details className="bg-gray-100 rounded-lg p-4">
-              <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+              <summary className="cursor-pointer text-sm font-MEDIUM text-gray-700 hover:text-gray-900">
                 Skróty klawiszowe i nawigacja
               </summary>
               <div className="mt-4 text-left">
                 <dl className="grid grid-cols-1 gap-2 sm:grid-cols-2 text-sm">
                   <div>
-                    <dt className="font-medium text-gray-900">Tab / Shift+Tab</dt>
+                    <dt className="font-MEDIUM text-gray-900">Tab / Shift+Tab</dt>
                     <dd className="text-gray-600">Nawigacja między polami</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-900">Enter</dt>
+                    <dt className="font-MEDIUM text-gray-900">Enter</dt>
                     <dd className="text-gray-600">Aktywacja przycisków</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-900">Escape</dt>
+                    <dt className="font-MEDIUM text-gray-900">Escape</dt>
                     <dd className="text-gray-600">Zamknięcie menu/dialogów</dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-gray-900">Ctrl+S</dt>
+                    <dt className="font-MEDIUM text-gray-900">Ctrl+S</dt>
                     <dd className="text-gray-600">Zapisz przepis (gdy formularz jest wypełniony)</dd>
                   </div>
                 </dl>

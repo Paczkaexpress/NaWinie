@@ -108,7 +108,7 @@ const StarRating = memo(function StarRating({
       {stars}
       
       {hoverText && (
-        <span className="ml-2 text-sm text-gray-600 font-medium">
+        <span className="ml-2 text-sm text-gray-600 font-MEDIUM">
           {hoverText}
         </span>
       )}
