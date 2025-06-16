@@ -71,7 +71,7 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
             return (
               <div key={index} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-700">
+                  <span className="text-sm font-MEDIUM text-gray-700">
                     Składnik {index + 1}
                   </span>
                   <button
@@ -89,7 +89,7 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Ingredient Selection */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-MEDIUM text-gray-700 mb-1">
                       Składnik *
                     </label>
                     <IngredientSearchInput
@@ -103,7 +103,7 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
 
                   {/* Amount */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-MEDIUM text-gray-700 mb-1">
                       Ilość *
                     </label>
                     <input
@@ -141,7 +141,7 @@ const IngredientsSection: React.FC<IngredientsSectionProps> = ({
 
                   {/* Substitute Recommendation */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-MEDIUM text-gray-700 mb-1">
                       Sugerowany zamiennik (opcjonalnie)
                     </label>
                     <input

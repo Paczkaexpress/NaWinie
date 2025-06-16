@@ -306,7 +306,7 @@ const HomeView: React.FC = React.memo(() => {
               {/* Recipe Content */}
               {error ? (
                 <div className="text-center py-12">
-                  <div className="text-destructive font-medium mb-2">
+                  <div className="text-destructive font-MEDIUM mb-2">
                     Wystąpił błąd podczas ładowania przepisów
                   </div>
                   <p className="text-muted-foreground text-sm">

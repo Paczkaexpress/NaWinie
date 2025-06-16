@@ -33,14 +33,14 @@ const StepInput: React.FC<StepInputProps> = React.memo(({
     <div className="flex gap-4 p-4 border border-gray-200 rounded-lg">
       {/* Step number */}
       <div className="flex-shrink-0">
-        <div className="w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-medium">
+        <div className="w-8 h-8 bg-blue-100 text-blue-800 rounded-full flex items-center justify-center text-sm font-MEDIUM">
           {step.step}
         </div>
       </div>
 
       {/* Step description */}
       <div className="flex-grow">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-sm font-MEDIUM text-gray-700 mb-2">
           Opis kroku {step.step} <span className="text-red-500">*</span>
         </label>
         <textarea

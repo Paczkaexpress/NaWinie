@@ -66,7 +66,7 @@ comment on table user_default_ingredients is 'User-specific list of ingredients 
 
 ### 5. Recipes
 ```sql
-create type complexity_level as enum ('easy', 'medium', 'hard');
+create type complexity_level as enum ('EASY', 'MEDIUM', 'HARD');
 
 create table recipes (
   id uuid primary key default uuid_generate_v4(),

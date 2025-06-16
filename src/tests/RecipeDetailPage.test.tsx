@@ -77,7 +77,7 @@ describe('RecipeDetailPage', () => {
     id: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Spaghetti Carbonara',
     preparation_time_minutes: 20,
-    complexity_level: 'medium' as const,
+    complexity_level: 'MEDIUM' as const,
     author_id: 'author-123',
     average_rating: 4.5,
     total_votes: 120,

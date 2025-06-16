@@ -118,7 +118,7 @@ export function useRecipeEditForm(initialRecipe: RecipeDetailDto) {
     setValidationState(prev => ({ ...prev, preparation_time_minutes: validatePreparationTime(time) }));
   }, [validatePreparationTime]);
 
-  const updateComplexityLevel = useCallback((level: 'easy' | 'medium' | 'hard') => {
+  const updateComplexityLevel = useCallback((level: 'EASY' | 'MEDIUM' | 'HARD') => {
     setFormData(prev => ({ ...prev, complexity_level: level }));
   }, []);
 

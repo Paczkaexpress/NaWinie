@@ -108,7 +108,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ toast, onClose })
           {styles.icon}
         </div>
         <div className="ml-3 flex-1">
-          <div className={`text-sm font-medium ${styles.text}`}>
+          <div className={`text-sm font-MEDIUM ${styles.text}`}>
             {toast.title}
           </div>
           {toast.message && (
@@ -120,7 +120,7 @@ const ToastNotification: React.FC<ToastNotificationProps> = ({ toast, onClose })
             <div className="mt-3">
               <button
                 onClick={toast.action.onClick}
-                className={`text-sm font-medium underline hover:no-underline ${styles.text}`}
+                className={`text-sm font-MEDIUM underline hover:no-underline ${styles.text}`}
               >
                 {toast.action.label}
               </button>

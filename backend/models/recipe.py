@@ -8,9 +8,9 @@ import uuid
 from ..database import Base
 
 class ComplexityLevel(str, Enum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
+    EASY = "EASY"
+    MEDIUM = "MEDIUM"
+    HARD = "HARD"
 
 class Recipe(Base):
     __tablename__ = "recipes"

@@ -48,7 +48,7 @@ describe('useRecipeManagement', () => {
     description: 'Test Description',
     author_id: 'user-1',
     preparation_time_minutes: 30,
-    complexity_level: 'medium',
+    complexity_level: 'MEDIUM',
     image_data: 'base64-image-data',
     average_rating: 4.5,
     total_votes: 10,
@@ -286,7 +286,7 @@ describe('useRecipeManagement', () => {
     const updateData = {
       name: 'Updated Recipe',
       preparation_time_minutes: 30,
-      complexity_level: 'medium' as const,
+      complexity_level: 'MEDIUM' as const,
       steps: [{ step: 1, description: 'Updated Step' }],
       ingredients: []
     };

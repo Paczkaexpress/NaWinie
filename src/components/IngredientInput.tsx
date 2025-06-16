@@ -88,7 +88,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 border border-gray-200 rounded-lg">
       {/* Ingredient Selection */}
       <div className="md:col-span-4 relative">
-        <label htmlFor={`ingredient-search-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-search-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-MEDIUM text-gray-700 mb-1">
           Składnik <span className="text-red-500">*</span>
         </label>
         
@@ -154,7 +154,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
 
       {/* Amount */}
       <div className="md:col-span-2">
-        <label htmlFor={`ingredient-amount-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-amount-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-MEDIUM text-gray-700 mb-1">
           Ilość <span className="text-red-500">*</span>
         </label>
         <input
@@ -194,7 +194,7 @@ const IngredientInput: React.FC<IngredientInputProps> = React.memo(({
 
       {/* Substitute recommendation */}
       <div className="md:col-span-3">
-        <label htmlFor={`ingredient-substitute-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor={`ingredient-substitute-${ingredient.ingredient_id || 'new'}`} className="block text-sm font-MEDIUM text-gray-700 mb-1">
           Zamiennik
         </label>
         <input

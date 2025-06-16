@@ -44,7 +44,7 @@ const RecipeDetailErrorFallback: React.FC<{ error: Error; resetError: () => void
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <button
           onClick={resetError}
-          className="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200"
+          className="inline-flex items-center px-4 py-2 bg-red-600 text-white font-MEDIUM rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200"
         >
           <svg 
             className="w-4 h-4 mr-2" 
@@ -65,7 +65,7 @@ const RecipeDetailErrorFallback: React.FC<{ error: Error; resetError: () => void
         
         <button
           onClick={() => window.location.href = '/'}
-          className="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200"
+          className="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-MEDIUM rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200"
         >
           <svg 
             className="w-4 h-4 mr-2" 
@@ -212,14 +212,14 @@ export default function RecipeDetailPageWithErrorBoundary({
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={() => window.location.reload()}
-              className="inline-flex items-center px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white font-MEDIUM rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200"
             >
               Try Again
             </button>
             
             <button
               onClick={() => window.location.href = '/'}
-              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-gray-600 text-white font-MEDIUM rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors duration-200"
             >
               Go Home
             </button>

@@ -46,14 +46,14 @@ on conflict (user_id, ingredient_id) do nothing;
 
 -- Insert Recipes
 insert into recipes (id, name, preparation_time_minutes, complexity_level, steps, author_id, average_rating, total_votes) values 
-('20000000-0000-0000-0000-000000000001', 'Simple Pancakes', 20, 'easy', '[
+('20000000-0000-0000-0000-000000000001', 'Simple Pancakes', 20, 'EASY', '[
     {"step": 1, "description": "Mix flour, sugar, and a pinch of salt in a bowl."},
     {"step": 2, "description": "Whisk in egg and milk until smooth."},
-    {"step": 3, "description": "Melt butter in a pan over medium heat."},
+    {"step": 3, "description": "Melt butter in a pan over MEDIUM heat."},
     {"step": 4, "description": "Pour batter onto the pan and cook until bubbles form, then flip and cook the other side."},
     {"step": 5, "description": "Serve warm."}
 ]', '00000000-0000-0000-0000-000000000001', 4.5, 15),
-('20000000-0000-0000-0000-000000000002', 'Chicken Stir-Fry', 35, 'medium', '[
+('20000000-0000-0000-0000-000000000002', 'Chicken Stir-Fry', 35, 'MEDIUM', '[
     {"step": 1, "description": "Cut chicken breast into strips."},
     {"step": 2, "description": "Chop onion and garlic."},
     {"step": 3, "description": "Heat olive oil in a wok or large pan."},
@@ -62,7 +62,7 @@ insert into recipes (id, name, preparation_time_minutes, complexity_level, steps
     {"step": 6, "description": "Add desired vegetables (e.g., chopped tomatoes) and stir-fry sauce."},
     {"step": 7, "description": "Serve immediately, optionally over rice."}
 ]', '00000000-0000-0000-0000-000000000002', 4.2, 25),
-('20000000-0000-0000-0000-000000000003', 'Basic Tomato Pasta', 25, 'easy', '[
+('20000000-0000-0000-0000-000000000003', 'Basic Tomato Pasta', 25, 'EASY', '[
     {"step": 1, "description": "Cook pasta according to package directions."},
     {"step": 2, "description": "While pasta cooks, heat olive oil in a pan."},
     {"step": 3, "description": "Sauté chopped garlic until fragrant."},

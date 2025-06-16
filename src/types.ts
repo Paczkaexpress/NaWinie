@@ -158,7 +158,7 @@ export type PaginatedUserRecipeViewHistoryDto = PaginatedResponse<UserRecipeView
 export type CreateRecipeFormData = {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD'; // Frontend uses lowercase
   steps: RecipeStepFormData[];
   ingredients: RecipeIngredientFormData[];
   image?: File;
@@ -182,7 +182,7 @@ export type RecipeStepFormData = {
 export type BasicRecipeInfo = {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD'; // Frontend uses lowercase
 };
 
 /** Form validation state */
@@ -283,7 +283,7 @@ export type RecipeEditModalProps = {
 export type EditRecipeFormData = {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD';
   steps: RecipeStepFormData[];
   ingredients: RecipeIngredientFormData[];
 };

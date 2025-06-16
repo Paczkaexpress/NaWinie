@@ -108,7 +108,7 @@ async logout(): Promise<void> {
       // Still clear local state even if Supabase logout fails
     }
     
-    // Use proper navigation instead of hard redirect
+    // Use proper navigation instead of HARD redirect
     // Or ensure all cleanup is complete before redirect
     setTimeout(() => {
       window.location.href = '/';

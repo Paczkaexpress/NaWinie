@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useRecipeRatingLegacy } from '../hooks/useRecipeRating';
 import { useAuth } from '../hooks/useAuth';
 import { getRecipeById } from '../lib/api';
+import { authService } from '../lib/auth';
 import type { RecipeDetailDto } from '../types';
 
 // Component imports
@@ -25,9 +26,14 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
   const [selectedRating, setSelectedRating] = useState<number | null>(null);
   const [showRatingSuccess, setShowRatingSuccess] = useState(false);
   const [showLinkCopied, setShowLinkCopied] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const { submitRating, isSubmitting: isSubmittingRating, error: ratingError } = useRecipeRatingLegacy();
   const { isAuthenticated, user } = useAuth();
+
+  // Check if current user is the recipe author
+  const isAuthor = user && recipe && recipe.author_id === user.id;
 
   // Load recipe data if recipeId is provided but no initialRecipe
   useEffect(() => {
@@ -156,6 +162,43 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
     }
   };
 
+  const handleDeleteRecipe = async () => {
+    if (!recipe || !user) return;
+
+    setIsDeleting(true);
+    try {
+      const session = await authService.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        alert('Błąd uwierzytelniania. Proszę zalogować się ponownie.');
+        return;
+      }
+
+      const response = await fetch(`/api/recipes-clean/${recipe.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Nie udało się usunąć przepisu');
+      }
+
+      // Redirect to home page after successful deletion
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error deleting recipe:', error);
+      alert(error instanceof Error ? error.message : 'Wystąpił błąd podczas usuwania przepisu');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
   const renderStars = (rating: number, interactive = false, onClick?: (rating: number) => void) => {
     return (
       <div className="flex">
@@ -189,7 +232,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
       {/* Back Button */}
       <button
         onClick={() => window.history.back()}
-        className="inline-flex items-center px-4 py-2 mb-6 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
+        className="inline-flex items-center px-4 py-2 mb-6 text-sm font-MEDIUM text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
       >
         <svg 
           className="w-4 h-4 mr-2" 
@@ -244,13 +287,28 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
         
         {/* Recipe Title and Info */}
         <div className="p-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{recipe?.name || 'Untitled Recipe'}</h1>
+          <div className="flex justify-between items-start mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{recipe?.name || 'Untitled Recipe'}</h1>
+            
+            {/* Delete Button - Only visible to recipe author */}
+            {isAuthor && (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="ml-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors duration-200 flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H9a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Usuń przepis
+              </button>
+            )}
+          </div>
           
           {/* Rating Display */}
           <div className="flex items-center gap-4 mb-6">
             <div className="flex items-center gap-2">
               {renderStars(recipe.average_rating || 0)}
-              <span className="text-lg font-medium text-gray-700">
+              <span className="text-lg font-MEDIUM text-gray-700">
                 {recipe.average_rating ? recipe.average_rating.toFixed(1) : '0.0'}
               </span>
               <span className="text-sm text-gray-500">
@@ -265,21 +323,21 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span><span className="font-medium">Prep Time:</span> {recipe?.preparation_time_minutes || 0} min</span>
+              <span><span className="font-MEDIUM">Prep Time:</span> {recipe?.preparation_time_minutes || 0} min</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
-              <span><span className="font-medium">Difficulty:</span>{' '}
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  (recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'bg-green-100 text-green-800' :
-                  (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'bg-yellow-100 text-yellow-800' :
+              <span><span className="font-MEDIUM">Difficulty:</span>{' '}
+                <span className={`px-2 py-1 rounded text-xs font-MEDIUM ${
+                  (recipe?.difficulty_level === 'EASY' || recipe?.complexity_level === 'EASY') ? 'bg-green-100 text-green-800' :
+                  (recipe?.difficulty_level === 'MEDIUM' || recipe?.complexity_level === 'MEDIUM') ? 'bg-yellow-100 text-yellow-800' :
                   'bg-red-100 text-red-800'
                 }`}>
-                  {(recipe?.difficulty_level === 'easy' || recipe?.complexity_level === 'easy') ? 'Łatwy' : 
-                   (recipe?.difficulty_level === 'medium' || recipe?.complexity_level === 'medium') ? 'Średni' : 
-                   (recipe?.difficulty_level === 'hard' || recipe?.complexity_level === 'hard') ? 'Trudny' : 'nieznany'}
+                  {(recipe?.difficulty_level === 'EASY' || recipe?.complexity_level === 'EASY') ? 'Łatwy' : 
+                   (recipe?.difficulty_level === 'MEDIUM' || recipe?.complexity_level === 'MEDIUM') ? 'Średni' : 
+                   (recipe?.difficulty_level === 'HARD' || recipe?.complexity_level === 'HARD') ? 'Trudny' : 'nieznany'}
                 </span>
               </span>
             </div>
@@ -287,7 +345,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span><span className="font-medium">Servings:</span> {recipe?.servings || 1}</span>
+              <span><span className="font-MEDIUM">Servings:</span> {recipe?.servings || 1}</span>
             </div>
           </div>
 
@@ -305,7 +363,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            <p className="text-green-800 font-medium">Dziękujemy za ocenę przepisu!</p>
+            <p className="text-green-800 font-MEDIUM">Dziękujemy za ocenę przepisu!</p>
           </div>
         </div>
       )}
@@ -326,7 +384,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
                 <li key={index} className="flex items-start gap-3 p-2 rounded hover:bg-gray-50 transition-colors">
                   <span className="flex-shrink-0 w-2 h-2 bg-orange-400 rounded-full mt-2"></span>
                   <div className="flex-1">
-                    <span className={`font-medium ${ingredient?.is_optional ? 'text-gray-600 italic' : 'text-gray-800'}`}>
+                    <span className={`font-MEDIUM ${ingredient?.is_optional ? 'text-gray-600 italic' : 'text-gray-800'}`}>
                       {ingredient?.amount || 0} {ingredient?.unit_type || 'unit'} {ingredient?.name || 'Unknown ingredient'}
                       {ingredient?.is_optional && (
                         <span className="text-xs text-gray-500 ml-2 px-2 py-1 bg-gray-100 rounded-full">optional</span>
@@ -334,7 +392,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
                     </span>
                     {ingredient?.substitute_recommendation && (
                       <p className="text-sm text-gray-500 mt-1">
-                        <span className="font-medium">Alternative:</span> {ingredient.substitute_recommendation}
+                        <span className="font-MEDIUM">Alternative:</span> {ingredient.substitute_recommendation}
                       </p>
                     )}
                   </div>
@@ -364,7 +422,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Your rating:</label>
+                <label className="block text-sm font-MEDIUM text-gray-700 mb-2">Your rating:</label>
                 <div className="flex items-center gap-1">
                   {renderStars(selectedRating || 0, true, setSelectedRating)}
                 </div>
@@ -372,7 +430,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               <button
                 onClick={handleRatingSubmit}
                 disabled={!selectedRating || isSubmittingRating}
-                className="w-full px-4 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                className="w-full px-4 py-2 bg-orange-600 text-white font-MEDIUM rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
               >
                 {isSubmittingRating ? (
                   <>
@@ -398,7 +456,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
             </p>
             <a 
               href="/auth" 
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-MEDIUM rounded-lg hover:bg-blue-700 transition-colors duration-200"
             >
               Log in to rate
             </a>
@@ -444,7 +502,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(recipe.nutrition_facts).map(([key, value]) => (
               <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
-                <div className="font-medium text-gray-900 capitalize text-sm">
+                <div className="font-MEDIUM text-gray-900 capitalize text-sm">
                   {key.replace('_', ' ')}
                 </div>
                 <div className="text-2xl font-bold text-blue-600 mt-1">{String(value)}</div>
@@ -477,7 +535,7 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
               alert('Nie można skopiować linku. Proszę skopiować URL ręcznie.');
             }
           }}
-          className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-colors duration-200"
+          className="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-MEDIUM rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-colors duration-200"
         >
           <svg 
             className="w-4 h-4 mr-2" 
@@ -499,10 +557,64 @@ export default function RecipeDetailPage({ initialRecipe, recipeId }: RecipeDeta
         {/* Copy Link Success Message */}
         {showLinkCopied && (
           <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800 font-medium">Link do przepisu został skopiowany!</p>
+            <p className="text-green-800 font-MEDIUM">Link do przepisu został skopiowany!</p>
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <h3 className="text-lg font-medium text-gray-900">Potwierdź usunięcie</h3>
+              </div>
+            </div>
+            
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Czy na pewno chcesz usunąć przepis <strong>"{recipe?.name}"</strong>?
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                Ta operacja jest nieodwracalna i wszystkie dane związane z przepisem zostaną utracone.
+              </p>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                Anuluj
+              </button>
+              <button
+                onClick={handleDeleteRecipe}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                    </svg>
+                    Usuwanie...
+                  </>
+                ) : (
+                  'Usuń przepis'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 

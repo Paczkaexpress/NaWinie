@@ -91,7 +91,7 @@ const StepsSection: React.FC<StepsSectionProps> = ({
                     <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold text-sm">
                       {step.step}
                     </div>
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-MEDIUM text-gray-700">
                       Krok {step.step}
                     </span>
                   </div>
@@ -139,7 +139,7 @@ const StepsSection: React.FC<StepsSectionProps> = ({
 
                 {/* Step description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-MEDIUM text-gray-700 mb-1">
                     Opis kroku *
                   </label>
                   <textarea
@@ -179,7 +179,7 @@ const StepsSection: React.FC<StepsSectionProps> = ({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="text-sm text-blue-700">
-            <p className="font-medium mb-1">Wskazówki:</p>
+            <p className="font-MEDIUM mb-1">Wskazówki:</p>
             <ul className="space-y-1 text-sm">
               <li>• Opisuj kroki możliwie szczegółowo</li>
               <li>• Używaj przycisków strzałek aby zmienić kolejność kroków</li>

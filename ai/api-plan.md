@@ -179,7 +179,7 @@
 
 *   **GET** `/recipes`
     *   **Description**: Get a list of all recipes. Supports pagination, filtering (by complexity, author), and sorting (by name, rating, prep\_time, created\_at).
-    *   **Query Parameters**: `page`, `limit`, `complexity` (easy, medium, hard), `authorId`, `sortBy`, `sortOrder`
+    *   **Query Parameters**: `page`, `limit`, `complexity` (EASY, MEDIUM, HARD), `authorId`, `sortBy`, `sortOrder`
     *   **Response Body**:
         ```json
         {
@@ -188,7 +188,7 @@
               "id": "uuid",
               "name": "Simple Pancakes",
               "preparation_time_minutes": 20,
-              "complexity_level": "easy",
+              "complexity_level": "EASY",
               "author_id": "uuid",
               "average_rating": 4.5,
               "total_votes": 15,
@@ -226,7 +226,7 @@
         {
           "name": "New Recipe",
           "preparation_time_minutes": 30,
-          "complexity_level": "medium",
+          "complexity_level": "MEDIUM",
           "steps": [
             {"step": 1, "description": "Do step 1."},
             {"step": 2, "description": "Do step 2."}
@@ -248,7 +248,7 @@
           "id": "uuid",
           "name": "New Recipe",
           "preparation_time_minutes": 30,
-          "complexity_level": "medium",
+          "complexity_level": "MEDIUM",
           "steps": [...],
           "author_id": "uuid_of_authenticated_user",
           "average_rating": 0,
@@ -268,7 +268,7 @@
           "id": "uuid",
           "name": "Simple Pancakes",
           "preparation_time_minutes": 20,
-          "complexity_level": "easy",
+          "complexity_level": "EASY",
           "steps": [
             {"step": 1, "description": "Mix flour..."}, ...
           ],
@@ -362,7 +362,7 @@
     *   Leverage FastAPI's integration with Pydantic for automatic request body validation based on defined models.
     *   **Users**: `email` must be unique and valid format.
     *   **Ingredients**: `name` must be unique. `unit_type` must be one of ('ml', 'g', 'szt').
-    *   **Recipes**: `name` is required. `preparation_time_minutes` must be > 0. `complexity_level` must be one of ('easy', 'medium', 'hard'). `steps` must be a valid JSON array of objects with `step` (integer) and `description` (text). `average_rating` between 0-5. `total_votes` >= 0.
+    *   **Recipes**: `name` is required. `preparation_time_minutes` must be > 0. `complexity_level` must be one of ('EASY', 'MEDIUM', 'HARD'). `steps` must be a valid JSON array of objects with `step` (integer) and `description` (text). `average_rating` between 0-5. `total_votes` >= 0.
     *   **Recipe Ingredients**: `amount` must be > 0. Foreign keys (`recipe_id`, `ingredient_id`) must exist.
     *   **Recipe Views**: `view_end` must be > `view_start` if not null.
     *   **Ingredient Popularity**: `search_count` >= 0.

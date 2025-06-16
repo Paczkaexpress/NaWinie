@@ -136,7 +136,7 @@ export type RecipeEditModalProps = {
 export type EditRecipeFormData = {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD';
   steps: RecipeStepFormData[];
   ingredients: RecipeIngredientFormData[];
 };
@@ -240,7 +240,7 @@ Widok integruje się z trzema głównymi endpointami:
 ### Walidacja formularza edycji:
 - **Nazwa przepisu**: Wymagana, 1-255 znaków, bez pustych stringów
 - **Czas przygotowania**: Wymagany, liczba całkowita > 0, max 9999 minut
-- **Poziom trudności**: Wymagany, jedna z wartości: 'easy', 'medium', 'hard'
+- **Poziom trudności**: Wymagany, jedna z wartości: 'EASY', 'MEDIUM', 'HARD'
 - **Składniki**: Minimum 1 składnik, każdy musi mieć: ingredient_id (UUID), amount (liczba > 0)
 - **Kroki**: Minimum 1 krok, każdy krok musi mieć niepusty opis (1-1000 znaków)
 

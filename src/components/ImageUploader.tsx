@@ -83,7 +83,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = React.memo(({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium text-gray-900">Zdjęcie przepisu</h3>
+      <h3 className="text-lg font-MEDIUM text-gray-900">Zdjęcie przepisu</h3>
       <p className="text-sm text-gray-600">Opcjonalne - dodaj zdjęcie swojego przepisu</p>
 
       {!preview ? (
@@ -123,7 +123,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = React.memo(({
               />
             </svg>
             <div className="text-sm text-gray-600">
-              <span className="font-medium text-blue-600">Kliknij aby wybrać plik</span>
+              <span className="font-MEDIUM text-blue-600">Kliknij aby wybrać plik</span>
               <span> lub przeciągnij i upuść</span>
             </div>
             <p className="text-xs text-gray-500">

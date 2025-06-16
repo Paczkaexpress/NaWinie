@@ -14,7 +14,7 @@ interface EditRecipeFormProps {
   validationState: EditFormValidationState;
   onUpdateName: (name: string) => void;
   onUpdatePreparationTime: (time: number) => void;
-  onUpdateComplexityLevel: (level: 'easy' | 'medium' | 'hard') => void;
+  onUpdateComplexityLevel: (level: 'EASY' | 'MEDIUM' | 'HARD') => void;
   onUpdateStep: (index: number, step: Partial<RecipeStepFormData>) => void;
   onAddStep: () => void;
   onRemoveStep: (index: number) => void;

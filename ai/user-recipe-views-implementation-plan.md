@@ -201,7 +201,7 @@ Endpoint `GET /users/me/recipe-views` służy do pobierania historii przeglądan
 ### Skalowanie:
 - **Database Connection Pooling**: Optymalne wykorzystanie SQLAlchemy pool
 - **Query Optimization**: Monitoring slow queries przez database profiling
-- **Horizontal Scaling**: Przygotowanie do sharding po user_id w przyszłości
+- **Horizontal Scaling**: Przygotowanie do sHARDing po user_id w przyszłości
 
 ## 9. Etapy wdrożenia
 

@@ -36,7 +36,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
           <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
             <div className="text-center text-muted-foreground">
               <ChefHat className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm font-medium">Zdjęcie przepisu</p>
+              <p className="text-sm font-MEDIUM">Zdjęcie przepisu</p>
             </div>
           </div>
         )}
@@ -94,7 +94,7 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
           
           <div className="flex items-center gap-1">
             <Star className="h-3 w-3 text-yellow-500" fill="currentColor" />
-            <span className="font-medium">
+            <span className="font-MEDIUM">
               {recipe.average_rating ? recipe.average_rating.toFixed(1) : '0.0'}
             </span>
           </div>

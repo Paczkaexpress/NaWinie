@@ -144,7 +144,7 @@ export const AccessibleFieldset: React.FC<FieldsetProps> = ({
   className = '' 
 }) => (
   <fieldset className={`border border-gray-300 rounded-md p-4 ${className}`}>
-    <legend className="text-sm font-medium text-gray-900 px-2">{legend}</legend>
+    <legend className="text-sm font-MEDIUM text-gray-900 px-2">{legend}</legend>
     {children}
   </fieldset>
 );

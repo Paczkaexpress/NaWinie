@@ -10,7 +10,7 @@ API przepisów składa się z 7 głównych endpointów obsługujących pełny cy
 - **Metoda HTTP**: GET
 - **Struktura URL**: `/api/recipes`
 - **Parametry**:
-  - Opcjonalne: `page` (int, default: 1), `limit` (int, default: 10), `complexity` (enum: easy/medium/hard), `authorId` (UUID), `sortBy` (string: name/rating/prep_time/created_at), `sortOrder` (string: asc/desc)
+  - Opcjonalne: `page` (int, default: 1), `limit` (int, default: 10), `complexity` (enum: EASY/MEDIUM/HARD), `authorId` (UUID), `sortBy` (string: name/rating/prep_time/created_at), `sortOrder` (string: asc/desc)
 - **Request Body**: Brak
 
 ### GET `/recipes/find-by-ingredients`
@@ -29,7 +29,7 @@ API przepisów składa się z 7 głównych endpointów obsługujących pełny cy
 {
   "name": "string",
   "preparation_time_minutes": "integer",
-  "complexity_level": "easy|medium|hard",
+  "complexity_level": "EASY|MEDIUM|HARD",
   "steps": [{"step": 1, "description": "string"}],
   "ingredients": [{"ingredient_id": "uuid", "amount": "number", "is_optional": "boolean", "substitute_recommendation": "string|null"}]
 }
@@ -147,9 +147,9 @@ class RatingUpdateResponse(BaseModel):
 
 # Supporting Models
 class ComplexityLevel(str, Enum):
-    EASY = "easy"
-    MEDIUM = "medium"
-    HARD = "hard"
+    EASY = "EASY"
+    MEDIUM = "MEDIUM"
+    HARD = "HARD"
 
 class SortField(str, Enum):
     NAME = "name"
@@ -355,7 +355,7 @@ def log_error(error_type: str, user_id: Optional[str], details: dict):
 9. **Implementacja DELETE `/recipes/{recipeId}`**:
    - Walidacja ownership lub admin role
    - Cascade deletion handling
-   - Soft delete vs hard delete decision
+   - Soft delete vs HARD delete decision
 
 ### Faza 4: System oceniania
 10. **Utworzenie tabeli recipe_ratings**:

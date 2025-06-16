@@ -12,7 +12,7 @@ create extension if not exists "pg_trgm";
 -- Create custom types
 do $$ begin
     create type unit_type as enum ('ml', 'g', 'szt');
-    create type complexity_level as enum ('easy', 'medium', 'hard');
+    create type complexity_level as enum ('EASY', 'MEDIUM', 'HARD');
 exception
     when duplicate_object then null;
 end $$;

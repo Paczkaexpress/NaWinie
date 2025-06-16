@@ -115,7 +115,7 @@ const RecipeRatingSection: React.FC<RecipeRatingSectionProps> = ({
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             {renderStars(currentRating.average_rating, false, 'md')}
-            <span className="text-lg font-medium text-gray-900">
+            <span className="text-lg font-MEDIUM text-gray-900">
               {currentRating.average_rating > 0 ? currentRating.average_rating.toFixed(1) : '0.0'}
             </span>
           </div>
@@ -147,7 +147,7 @@ const RecipeRatingSection: React.FC<RecipeRatingSectionProps> = ({
       ) : (
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-MEDIUM text-gray-700 mb-2">
               Jak oceniasz ten przepis?
             </label>
             <div 
@@ -156,7 +156,7 @@ const RecipeRatingSection: React.FC<RecipeRatingSectionProps> = ({
             >
               {renderStars(ratingState.selectedRating, true, 'lg')}
               {ratingState.selectedRating > 0 && (
-                <span className="ml-3 text-lg font-medium text-gray-700">
+                <span className="ml-3 text-lg font-MEDIUM text-gray-700">
                   {ratingState.selectedRating} / 5
                 </span>
               )}
@@ -196,7 +196,7 @@ const RecipeRatingSection: React.FC<RecipeRatingSectionProps> = ({
       {/* Rating Guidelines */}
       <div className="mt-6 p-3 bg-gray-50 border border-gray-200 rounded-lg">
         <div className="text-sm text-gray-600">
-          <p className="font-medium mb-2">Wskazówki dotyczące oceniania:</p>
+          <p className="font-MEDIUM mb-2">Wskazówki dotyczące oceniania:</p>
           <ul className="space-y-1 text-xs">
             <li>• 5 gwiazdek - przepis doskonały, polecam wszystkim</li>
             <li>• 4 gwiazdki - bardzo dobry przepis z drobnymi niedociągnięciami</li>

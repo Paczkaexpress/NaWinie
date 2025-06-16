@@ -74,7 +74,7 @@ export default function RatingComponent({
           
           <button
             onClick={handleLoginRedirect}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-MEDIUM rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200"
           >
             <svg 
               className="w-4 h-4 mr-2" 

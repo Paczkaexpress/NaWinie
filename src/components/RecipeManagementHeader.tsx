@@ -10,18 +10,18 @@ const RecipeManagementHeader: React.FC<RecipeHeaderProps> = ({
 }) => {
   const getComplexityLabel = (level: string) => {
     switch (level) {
-      case 'easy': return 'Łatwy';
-      case 'medium': return 'Średni';
-      case 'hard': return 'Trudny';
+      case 'EASY': return 'Łatwy';
+      case 'MEDIUM': return 'Średni';
+      case 'HARD': return 'Trudny';
       default: return level;
     }
   };
 
   const getComplexityColor = (level: string) => {
     switch (level) {
-      case 'easy': return 'text-green-600 bg-green-100';
-      case 'medium': return 'text-yellow-600 bg-yellow-100';
-      case 'hard': return 'text-red-600 bg-red-100';
+      case 'EASY': return 'text-green-600 bg-green-100';
+      case 'MEDIUM': return 'text-yellow-600 bg-yellow-100';
+      case 'HARD': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -60,7 +60,7 @@ const RecipeManagementHeader: React.FC<RecipeHeaderProps> = ({
             </div>
 
             {/* Complexity level */}
-            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getComplexityColor(recipe.complexity_level)}`}>
+            <div className={`px-2 py-1 rounded-full text-xs font-MEDIUM ${getComplexityColor(recipe.complexity_level)}`}>
               {getComplexityLabel(recipe.complexity_level)}
             </div>
 

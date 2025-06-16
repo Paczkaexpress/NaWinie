@@ -48,7 +48,7 @@ const mockRecipe: RecipeDetailDto = {
   name: 'Test Recipe',
   description: 'Test Description',
   preparation_time_minutes: 30,
-  complexity_level: 'medium',
+  complexity_level: 'MEDIUM',
   author_id: 'user-1',
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',

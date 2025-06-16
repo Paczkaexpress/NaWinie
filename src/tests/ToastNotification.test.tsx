@@ -255,7 +255,7 @@ describe('ToastContainer', () => {
     
     // Check order by checking the title text in each toast
     const titles = toastElements.map(toast => 
-      toast.querySelector('.font-medium')?.textContent
+      toast.querySelector('.font-MEDIUM')?.textContent
     );
     expect(titles).toEqual(['Success Toast', 'Error Toast', 'Warning Toast']);
   });

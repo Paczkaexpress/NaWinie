@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabaseClient';
 import type { CreateRecipeCommand } from '../../types';
 
 export const POST: APIRoute = async ({ request }) => {
-  console.log('🚀 Recipe API: Starting POST request processing');
+  console.log('🚀 CLEAN Recipe API: Starting POST request processing');
   
   try {
     // Get authorization header
@@ -18,7 +18,7 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const token = authHeader.substring(7);
     console.log('🔑 Token extracted, length:', token.length);
 
     // Verify the token with Supabase
@@ -35,6 +35,44 @@ export const POST: APIRoute = async ({ request }) => {
     
     console.log('✅ User authenticated:', user.id);
 
+    // Ensure user exists in the users table
+    console.log('👤 Checking if user exists in users table...');
+    const { data: existingUser, error: userCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single();
+
+    if (userCheckError && userCheckError.code === 'PGRST116') {
+      // User doesn't exist, create them
+      console.log('👤 User not found in users table, creating...');
+      const { error: userInsertError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (userInsertError) {
+        console.error('❌ Failed to create user:', userInsertError);
+        return new Response(
+          JSON.stringify({ message: 'Błąd podczas tworzenia użytkownika' }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+      console.log('✅ User created in users table');
+    } else if (userCheckError) {
+      console.error('❌ Error checking user:', userCheckError);
+      return new Response(
+        JSON.stringify({ message: 'Błąd podczas sprawdzania użytkownika' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    } else {
+      console.log('✅ User already exists in users table');
+    }
+
     // Parse request body
     let recipeData: CreateRecipeCommand;
     let imageFile: File | null = null;
@@ -44,7 +82,6 @@ export const POST: APIRoute = async ({ request }) => {
     
     if (contentType?.includes('multipart/form-data')) {
       console.log('📎 Processing FormData (with image)');
-      // Handle FormData (with image)
       const formData = await request.formData();
       const recipeJson = formData.get('recipe') as string;
       imageFile = formData.get('image') as File | null;
@@ -72,7 +109,6 @@ export const POST: APIRoute = async ({ request }) => {
       }
     } else {
       console.log('📋 Processing JSON (without image)');
-      // Handle JSON (without image)
       try {
         recipeData = await request.json();
         console.log('✅ JSON data parsed successfully');
@@ -85,8 +121,7 @@ export const POST: APIRoute = async ({ request }) => {
       }
     }
 
-    // Log received data for debugging
-    console.log('Received recipe data:', {
+    console.log('📝 Received recipe data:', {
       name: recipeData.name,
       preparation_time_minutes: recipeData.preparation_time_minutes,
       complexity_level: recipeData.complexity_level,
@@ -95,88 +130,61 @@ export const POST: APIRoute = async ({ request }) => {
       hasImage: !!imageFile
     });
 
-    // Validate required fields
-    if (!recipeData.name?.trim() || !recipeData.preparation_time_minutes || !recipeData.complexity_level) {
-      console.error('Validation failed - missing required fields:', {
-        hasName: !!recipeData.name?.trim(),
-        hasTime: !!recipeData.preparation_time_minutes,
-        hasComplexity: !!recipeData.complexity_level
-      });
+    // Basic validation
+    if (!recipeData.name?.trim()) {
+      console.log('❌ Missing recipe name');
       return new Response(
-        JSON.stringify({ message: 'Brak wymaganych pól: nazwa, czas przygotowania, poziom trudności' }),
+        JSON.stringify({ message: 'Nazwa przepisu jest wymagana' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate data types and ranges
-    if (typeof recipeData.preparation_time_minutes !== 'number' || recipeData.preparation_time_minutes <= 0) {
+    if (!recipeData.preparation_time_minutes || recipeData.preparation_time_minutes <= 0) {
+      console.log('❌ Invalid preparation time');
       return new Response(
         JSON.stringify({ message: 'Czas przygotowania musi być liczbą większą od 0' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    if (!['easy', 'medium', 'hard'].includes(recipeData.complexity_level)) {
-      return new Response(
-        JSON.stringify({ message: 'Nieprawidłowy poziom trudności. Dozwolone wartości: easy, medium, hard' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Convert complexity level to uppercase to match database enum
+    // Convert complexity level to uppercase (handle both uppercase and lowercase)
     const complexityMap: { [key: string]: string } = {
+      'EASY': 'EASY',
+      'MEDIUM': 'MEDIUM', 
+      'HARD': 'HARD',
       'easy': 'EASY',
       'medium': 'MEDIUM', 
       'hard': 'HARD'
     };
     const dbComplexityLevel = complexityMap[recipeData.complexity_level] || 'EASY';
+    console.log('🔄 Converting complexity level:', recipeData.complexity_level, '→', dbComplexityLevel);
 
-    // Validate steps array
-    if (!recipeData.steps || !Array.isArray(recipeData.steps) || recipeData.steps.length === 0) {
+    // Validate steps
+    if (!recipeData.steps || recipeData.steps.length === 0) {
+      console.log('❌ Missing steps');
       return new Response(
         JSON.stringify({ message: 'Przepis musi zawierać co najmniej jeden krok' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate each step
-    for (let i = 0; i < recipeData.steps.length; i++) {
-      const step = recipeData.steps[i];
-      if (!step.description?.trim()) {
-        return new Response(
-          JSON.stringify({ message: `Krok ${i + 1} nie może być pusty` }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
-    // Validate ingredients array
-    if (!recipeData.ingredients || !Array.isArray(recipeData.ingredients) || recipeData.ingredients.length === 0) {
+    // Validate ingredients
+    if (!recipeData.ingredients || recipeData.ingredients.length === 0) {
+      console.log('❌ Missing ingredients');
       return new Response(
         JSON.stringify({ message: 'Przepis musi zawierać co najmniej jeden składnik' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Validate each ingredient
-    for (const ingredient of recipeData.ingredients) {
-      if (!ingredient.ingredient_id) {
-        return new Response(
-          JSON.stringify({ message: 'Wszystkie składniki muszą mieć wybrane nazwy' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-      if (!ingredient.amount || ingredient.amount <= 0) {
-        return new Response(
-          JSON.stringify({ message: 'Wszystkie składniki muszą mieć podaną ilość większą od 0' }),
-          { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
-      }
-    }
+    // Generate UUID for the recipe
+    const recipeId = crypto.randomUUID();
+    console.log('🆔 Generated recipe ID:', recipeId);
 
     // Handle image upload if present
     let imageData: string | null = null;
     if (imageFile && imageFile.size > 0) {
+      console.log('🖼️ Processing image file...');
       try {
         // Convert image to base64 for storage in database
         const arrayBuffer = await imageFile.arrayBuffer();
@@ -184,29 +192,30 @@ export const POST: APIRoute = async ({ request }) => {
         const base64 = btoa(String.fromCharCode(...uint8Array));
         imageData = `data:${imageFile.type};base64,${base64}`;
         
-        console.log('Image processed successfully:', {
+        console.log('✅ Image processed successfully:', {
           type: imageFile.type,
           size: imageFile.size,
           base64Length: base64.length
         });
       } catch (error) {
-        console.error('Image processing error:', error);
-        // Continue without image
+        console.error('❌ Image processing error:', error);
+        // Continue without image rather than failing the whole request
+        console.log('⚠️ Continuing recipe creation without image');
       }
     }
 
-    // Prepare recipe data for insertion (excluding image_data for now)
+    // Prepare recipe data for insertion
     const recipeToInsert = {
+      id: recipeId,
       name: recipeData.name.trim(),
       preparation_time_minutes: recipeData.preparation_time_minutes,
-      complexity_level: dbComplexityLevel, // Use uppercase value for database
-      steps: recipeData.steps || [],
-      author_id: user.id
-      // TODO: Add image_data back once column is confirmed to exist in database
-      // ...(imageData && { image_data: imageData })
+      complexity_level: dbComplexityLevel,
+      steps: recipeData.steps,
+      author_id: user.id,
+      ...(imageData && { image_data: imageData })
     };
 
-    console.log('Inserting recipe with data:', {
+    console.log('💾 Inserting recipe with data:', {
       ...recipeToInsert,
       image_data: imageData ? `[Base64 data: ${imageData.substring(0, 50)}...]` : null
     });
@@ -219,75 +228,55 @@ export const POST: APIRoute = async ({ request }) => {
       .single();
 
     if (insertError) {
-      console.error('Recipe insert error:', insertError);
-      console.error('Recipe data that failed to insert:', {
-        name: recipeData.name.trim(),
-        preparation_time_minutes: recipeData.preparation_time_minutes,
-        complexity_level: recipeData.complexity_level,
-        steps: recipeData.steps || [],
-        author_id: user.id,
-        hasImageData: !!imageData
-      });
-      
-      // Provide more specific error messages
-      let errorMessage = 'Błąd podczas zapisywania przepisu';
-      if (insertError.message?.includes('violates check constraint')) {
-        errorMessage = 'Nieprawidłowe dane przepisu - sprawdź czy wszystkie pola są wypełnione poprawnie';
-      } else if (insertError.message?.includes('not-null constraint')) {
-        errorMessage = 'Brakuje wymaganych informacji o przepisie';
-      } else if (insertError.message?.includes('foreign key')) {
-        errorMessage = 'Problem z powiązanymi danymi - sprawdź czy użytkownik jest zalogowany';
-      } else if (insertError.message?.includes('column') && insertError.message?.includes('does not exist')) {
-        errorMessage = 'Problem ze strukturą bazy danych - brakuje kolumny';
-      } else if (insertError.message?.includes('complexity_level')) {
-        errorMessage = 'Nieprawidłowy poziom trudności';
-      }
-      
+      console.error('❌ Recipe insert error:', insertError);
       return new Response(
         JSON.stringify({ 
-          message: errorMessage,
+          message: 'Błąd podczas zapisywania przepisu',
           error: insertError.message
         }),
         { status: 500, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // Steps are already stored in the recipe record as JSON, no separate insertion needed
+    console.log('✅ Recipe created successfully:', recipe.id);
 
-    // Insert recipe ingredients
-    if (recipeData.ingredients && recipeData.ingredients.length > 0) {
-      const ingredientsToInsert = recipeData.ingredients.map(ingredient => ({
-        recipe_id: recipe.id,
-        ingredient_id: ingredient.ingredient_id,
-        amount: Number(ingredient.amount),
-        is_optional: Boolean(ingredient.is_optional || false),
-        substitute_recommendation: ingredient.substitute_recommendation?.trim() || null
-      }));
+         // Insert recipe ingredients
+     if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+       const ingredientsToInsert = recipeData.ingredients.map(ingredient => ({
+         id: crypto.randomUUID(), // Generate ID for recipe_ingredients table
+         recipe_id: recipe.id,
+         ingredient_id: ingredient.ingredient_id,
+         amount: Number(ingredient.amount),
+         is_optional: Boolean(ingredient.is_optional || false),
+         substitute_recommendation: ingredient.substitute_recommendation?.trim() || null
+       }));
 
-      console.log('Inserting recipe ingredients:', ingredientsToInsert);
+      console.log('💾 Inserting recipe ingredients:', ingredientsToInsert.length, 'items');
 
       const { error: ingredientsError } = await supabase
         .from('recipe_ingredients')
         .insert(ingredientsToInsert);
 
       if (ingredientsError) {
-        console.error('Recipe ingredients insert error:', ingredientsError);
-        console.error('Ingredients data that failed to insert:', ingredientsToInsert);
+        console.error('❌ Recipe ingredients insert error:', ingredientsError);
         
-        // If ingredients fail to insert, delete the recipe to maintain consistency
+        // Delete the recipe to maintain consistency
         await supabase.from('recipes').delete().eq('id', recipe.id);
         
         return new Response(
           JSON.stringify({ 
-            message: 'Błąd podczas zapisywania składników przepisu. Sprawdź czy wszystkie składniki są poprawnie wybrane i mają podane ilości.',
+            message: 'Błąd podczas zapisywania składników przepisu',
             error: ingredientsError.message
           }),
           { status: 500, headers: { 'Content-Type': 'application/json' } }
         );
       }
+
+      console.log('✅ Recipe ingredients saved successfully');
     }
 
     // Return success response
+    console.log('🎉 Recipe creation completed successfully');
     return new Response(
       JSON.stringify({
         id: recipe.id,
@@ -306,12 +295,6 @@ export const POST: APIRoute = async ({ request }) => {
 
   } catch (error) {
     console.error('💥 Recipe creation error:', error);
-    console.error('💥 Error details:', {
-      name: error instanceof Error ? error.name : 'Unknown',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : 'No stack trace'
-    });
-    
     return new Response(
       JSON.stringify({ 
         message: 'Wystąpił błąd serwera',

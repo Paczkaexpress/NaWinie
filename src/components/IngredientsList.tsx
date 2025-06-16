@@ -12,18 +12,18 @@ const IngredientItem = memo(function IngredientItem({ ingredient }: IngredientIt
     <li className="flex items-start py-2 border-b border-gray-100 last:border-b-0">
       <div className="flex-1">
         <div className="flex items-center">
-          <span className="font-medium text-gray-900">
+          <span className="font-MEDIUM text-gray-900">
             {amount} {unit_type} {name}
           </span>
           {is_optional && (
-            <span className="ml-2 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+            <span className="ml-2 px-2 py-1 text-xs font-MEDIUM bg-blue-100 text-blue-800 rounded-full">
               opcjonalne
             </span>
           )}
         </div>
         {substitute_recommendation && (
           <p className="mt-1 text-sm text-gray-600">
-            <span className="font-medium">Zamiennik:</span> {substitute_recommendation}
+            <span className="font-MEDIUM">Zamiennik:</span> {substitute_recommendation}
           </p>
         )}
       </div>
@@ -72,7 +72,7 @@ const IngredientsList = memo(function IngredientsList({ ingredients, className =
         
         {requiredIngredients.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Wymagane składniki</h3>
+            <h3 className="text-lg font-MEDIUM text-gray-800 mb-3">Wymagane składniki</h3>
             <ul className="space-y-0">
               {requiredIngredients.map((ingredient) => (
                 <IngredientItem 
@@ -86,7 +86,7 @@ const IngredientsList = memo(function IngredientsList({ ingredients, className =
         
         {optionalIngredients.length > 0 && (
           <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-3">Składniki opcjonalne</h3>
+            <h3 className="text-lg font-MEDIUM text-gray-800 mb-3">Składniki opcjonalne</h3>
             <ul className="space-y-0">
               {optionalIngredients.map((ingredient) => (
                 <IngredientItem 

@@ -25,7 +25,7 @@ This endpoint retrieves the complete details for a specific recipe identified by
     "id": "uuid",
     "name": "Simple Pancakes",
     "preparation_time_minutes": 20,
-    "complexity_level": "easy",
+    "complexity_level": "EASY",
     "author_id": "uuid",
     "average_rating": 4.5,
     "total_votes": 15,
@@ -35,7 +35,7 @@ This endpoint retrieves the complete details for a specific recipe identified by
       {"step": 1, "description": "Mix flour, sugar, baking powder, and salt."},
       {"step": 2, "description": "In another bowl, whisk egg, milk, and melted butter."},
       {"step": 3, "description": "Pour wet ingredients into dry ingredients and mix until just combined."},
-      {"step": 4, "description": "Heat a lightly oiled griddle or frying pan over medium-high heat."},
+      {"step": 4, "description": "Heat a lightly oiled griddle or frying pan over MEDIUM-high heat."},
       {"step": 5, "description": "Pour or scoop the batter onto the griddle, using approximately 1/4 cup for each pancake."},
       {"step": 6, "description": "Brown on both sides and serve hot."}
     ],

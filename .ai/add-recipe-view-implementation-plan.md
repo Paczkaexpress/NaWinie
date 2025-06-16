@@ -47,7 +47,7 @@ AddRecipePage
 - **Opis**: Sekcja zawierająca podstawowe informacje o przepisie
 - **Główne elementy**: Input dla nazwy, input dla czasu, select dla trudności
 - **Obsługiwane interakcje**: Wprowadzanie tekstu, wybór z listy
-- **Obsługiwana walidacja**: Nazwa (1-100 znaków), czas (1-999 minut), trudność (easy/medium/hard)
+- **Obsługiwana walidacja**: Nazwa (1-100 znaków), czas (1-999 minut), trudność (EASY/MEDIUM/HARD)
 - **Typy**: BasicRecipeInfo
 - **Propsy**: values, onChange, errors
 
@@ -98,7 +98,7 @@ AddRecipePage
 interface CreateRecipeFormData {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD';
   steps: RecipeStepFormData[];
   ingredients: RecipeIngredientFormData[];
   image?: File;
@@ -122,7 +122,7 @@ interface RecipeStepFormData {
 interface BasicRecipeInfo {
   name: string;
   preparation_time_minutes: number;
-  complexity_level: 'easy' | 'medium' | 'hard';
+  complexity_level: 'EASY' | 'MEDIUM' | 'HARD';
 }
 
 // Stan walidacji formularza
@@ -225,7 +225,7 @@ Widok wykorzystuje niestandardowe hooki do zarządzania stanem:
 ### Walidacja pól (komponent BasicInfoSection):
 - **Nazwa**: Wymagane, 1-100 znaków, unikalność nie sprawdzana
 - **Czas przygotowania**: Wymagane, liczba całkowita 1-999 minut
-- **Poziom trudności**: Wymagane, jedna z opcji: easy, medium, hard
+- **Poziom trudności**: Wymagane, jedna z opcji: EASY, MEDIUM, HARD
 
 ### Walidacja zdjęcia (komponent ImageUploader):
 - **Format**: JPEG, PNG, WebP

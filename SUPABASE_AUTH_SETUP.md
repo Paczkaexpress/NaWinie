@@ -152,7 +152,7 @@ create table recipes (
   id uuid default gen_random_uuid() primary key,
   name text not null,
   preparation_time_minutes integer not null,
-  complexity_level text not null check (complexity_level in ('easy', 'medium', 'hard')),
+  complexity_level text not null check (complexity_level in ('EASY', 'MEDIUM', 'HARD')),
   author_id uuid references auth.users(id),
   average_rating decimal(3,2) default 0,
   total_votes integer default 0,
@@ -182,10 +182,10 @@ create index recipes_average_rating_idx on recipes(average_rating);
 
 -- Insert some sample recipes
 insert into recipes (name, preparation_time_minutes, complexity_level, average_rating, total_votes) values
-  ('Spaghetti Carbonara', 20, 'medium', 4.5, 23),
-  ('Omlet z ziołami', 10, 'easy', 4.2, 15),
-  ('Kurczak w sosie curry', 35, 'medium', 4.8, 42),
-  ('Sałatka grecka', 15, 'easy', 4.3, 18);
+  ('Spaghetti Carbonara', 20, 'MEDIUM', 4.5, 23),
+  ('Omlet z ziołami', 10, 'EASY', 4.2, 15),
+  ('Kurczak w sosie curry', 35, 'MEDIUM', 4.8, 42),
+  ('Sałatka grecka', 15, 'EASY', 4.3, 18);
 ```
 
 ### 4. Recipe Ingredients Junction Table (Advanced)
