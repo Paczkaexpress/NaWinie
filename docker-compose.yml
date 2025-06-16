@@ -1,0 +1,63 @@
+services:
+  nawinie-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4321:4321"  # Astro frontend
+      - "8000:8000"  # FastAPI backend
+    environment:
+      # Load environment variables from .env file
+      # Required JWT Configuration
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      # Required Database Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      # Optional Configuration (with defaults)
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost:4321,http://localhost:8000}
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      # Required Frontend Supabase Configuration
+      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      # Optional Backend Configuration
+      - PUBLIC_USE_LOCAL_BACKEND=${PUBLIC_USE_LOCAL_BACKEND:-false}
+    env_file:
+      - .env
+    volumes:
+      # Mount logs directory for persistence
+      - ./logs:/app/logs
+      # Mount backend images for persistence
+      - ./backend/images:/app/backend/images
+      # Optional: Mount database file for persistence (if using SQLite)
+      - ./backend/nawinie.db:/app/backend/nawinie.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Optional: Add a development override
+  # Uncomment if you want to develop with live reloading
+  # nawinie-dev:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.dev  # You would need to create this
+  #   ports:
+  #     - "8000:8000"
+  #     - "4321:4321"  # For Astro dev server
+  #   volumes:
+  #     - .:/app
+  #     - /app/node_modules
+  #     - /app/venv
+  #   env_file:
+  #     - .env
+  #   command: ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload & npm run dev --host"]
+
+# Optional: Define named volumes for better data persistence
+volumes:
+  nawinie_logs:
+  nawinie_images:
+  nawinie_db: 

@@ -1,0 +1,107 @@
+# Git
+.git
+.gitignore
+
+# Node.js
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+.venv/
+env/
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.nyc_output
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Astro
+.astro/
+dist/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database files (exclude development databases)
+*.db
+*.sqlite
+*.sqlite3
+
+# Documentation (optional - include if needed)
+README.md
+*.md
+
+# Cursor AI
+.cursor/
+
+# GitHub
+.github/
+
+# Examples and tests (optional)
+examples/
+src/tests/
+backend/tests/
+
+# Setup scripts
+setup.bat
+setup.ps1
+SETUP.md 

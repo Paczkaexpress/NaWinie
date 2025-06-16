@@ -15,6 +15,7 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/node": "^8.2.0",
     "@astrojs/react": "^3.0.10",
     "@astrojs/tailwind": "^5.1.0",
     "@radix-ui/react-label": "^2.1.7",
