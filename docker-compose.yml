@@ -3,11 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # These will be used for cloud deployment when .env is not available
+        # For local development, these can be omitted as .env file will be used
+        - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL:-}
+        - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY:-}
+        - PUBLIC_USE_LOCAL_BACKEND=${PUBLIC_USE_LOCAL_BACKEND:-false}
     ports:
       - "4321:4321"  # Astro frontend
       - "8000:8000"  # FastAPI backend
     environment:
-      # Load environment variables from .env file
+      # Load environment variables from .env file or cloud platform
       # Required JWT Configuration
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}

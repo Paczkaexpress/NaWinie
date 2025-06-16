@@ -1,0 +1,58 @@
+# Google Cloud Build configuration for Na Winie application
+steps:
+  # Build the Docker image with build-time environment variables
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'PUBLIC_SUPABASE_URL=${_PUBLIC_SUPABASE_URL}'
+      - '--build-arg'
+      - 'PUBLIC_SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY}'
+      - '--build-arg'
+      - 'PUBLIC_USE_LOCAL_BACKEND=${_PUBLIC_USE_LOCAL_BACKEND}'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}'
+      - '-t'
+      - 'gcr.io/${PROJECT_ID}/nawinie:latest'
+      - '.'
+
+  # Push the image to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/${PROJECT_ID}/nawinie:latest']
+
+  # Deploy to Cloud Run (optional - uncomment if using Cloud Run)
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   args:
+  #     - 'run'
+  #     - 'deploy'
+  #     - 'nawinie'
+  #     - '--image'
+  #     - 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}'
+  #     - '--region'
+  #     - '${_REGION}'
+  #     - '--platform'
+  #     - 'managed'
+  #     - '--allow-unauthenticated'
+  #     - '--set-env-vars'
+  #     - 'JWT_SECRET_KEY=${_JWT_SECRET_KEY},PUBLIC_SUPABASE_URL=${_PUBLIC_SUPABASE_URL},PUBLIC_SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY},DATABASE_URL=${_DATABASE_URL}'
+
+# Build-time substitutions (set these in Cloud Build triggers or pass via gcloud)
+substitutions:
+  _PUBLIC_SUPABASE_URL: 'https://your-project-id.supabase.co'
+  _PUBLIC_SUPABASE_ANON_KEY: 'your-supabase-anon-key'
+  _PUBLIC_USE_LOCAL_BACKEND: 'false'
+  _REGION: 'us-central1'
+  _JWT_SECRET_KEY: 'your-jwt-secret-key'
+  _DATABASE_URL: 'postgresql://postgres:password@host:5432/database'
+
+# Image will be stored in Google Container Registry
+images: ['gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}', 'gcr.io/${PROJECT_ID}/nawinie:latest']
+
+# Build options
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 50
+  logging: CLOUD_LOGGING_ONLY 
