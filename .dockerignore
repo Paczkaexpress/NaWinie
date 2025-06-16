@@ -38,6 +38,7 @@ env/
 .env.development
 .env.test
 .env.production
+# Keep .env file (don't ignore it) - we need it in the container
 
 # Testing
 .pytest_cache/
@@ -75,7 +76,7 @@ Thumbs.db
 
 # Astro
 .astro/
-dist/
+# dist/ - commented out because we need the built frontend
 
 # Temporary files
 *.tmp

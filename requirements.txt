@@ -12,3 +12,4 @@ httpx==0.26.0
 requests==2.31.0
 psutil==5.9.6  # Optional: Only used for monitoring
 Pillow==10.2.0  # Optional: Only needed for image processing in populate_recipes.py 
+psycopg2-binary==2.9.9  # PostgreSQL adapter for SQLAlchemy 
