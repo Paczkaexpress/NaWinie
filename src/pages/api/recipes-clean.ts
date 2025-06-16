@@ -210,15 +210,16 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log('✅ Recipe created successfully:', recipe.id);
 
-    // Insert recipe ingredients
-    if (recipeData.ingredients && recipeData.ingredients.length > 0) {
-      const ingredientsToInsert = recipeData.ingredients.map(ingredient => ({
-        recipe_id: recipe.id,
-        ingredient_id: ingredient.ingredient_id,
-        amount: Number(ingredient.amount),
-        is_optional: Boolean(ingredient.is_optional || false),
-        substitute_recommendation: ingredient.substitute_recommendation?.trim() || null
-      }));
+         // Insert recipe ingredients
+     if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+       const ingredientsToInsert = recipeData.ingredients.map(ingredient => ({
+         id: crypto.randomUUID(), // Generate ID for recipe_ingredients table
+         recipe_id: recipe.id,
+         ingredient_id: ingredient.ingredient_id,
+         amount: Number(ingredient.amount),
+         is_optional: Boolean(ingredient.is_optional || false),
+         substitute_recommendation: ingredient.substitute_recommendation?.trim() || null
+       }));
 
       console.log('💾 Inserting recipe ingredients:', ingredientsToInsert.length, 'items');
 
