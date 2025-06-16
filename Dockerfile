@@ -6,8 +6,10 @@ FROM node:18-slim AS frontend-builder
 
 WORKDIR /app
 
-# Copy environment file first so it's available during build
-COPY .env .env
+# Define build arguments for environment variables (for cloud deployment)
+ARG PUBLIC_SUPABASE_URL
+ARG PUBLIC_SUPABASE_ANON_KEY
+ARG PUBLIC_USE_LOCAL_BACKEND=false
 
 # Copy frontend package files
 COPY package*.json ./
@@ -24,8 +26,20 @@ RUN npm install --include=optional
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Load environment variables and build the Astro frontend
-RUN export $(grep -v '^#' .env | xargs) && npm run build
+# Copy .env file if it exists (for local development)
+COPY .env* ./
+
+# Build with environment variables from either build args (cloud) or .env file (local)
+RUN if [ -f ".env" ]; then \
+        echo "Building with .env file (local development)..." && \
+        export $(grep -v '^#' .env | xargs) && npm run build; \
+    else \
+        echo "Building with environment variables (cloud deployment)..." && \
+        export PUBLIC_SUPABASE_URL="${PUBLIC_SUPABASE_URL}" && \
+        export PUBLIC_SUPABASE_ANON_KEY="${PUBLIC_SUPABASE_ANON_KEY}" && \
+        export PUBLIC_USE_LOCAL_BACKEND="${PUBLIC_USE_LOCAL_BACKEND}" && \
+        npm run build; \
+    fi
 
 # Stage 2: Setup Python Backend
 FROM python:3.11-slim AS backend-builder
@@ -65,8 +79,8 @@ COPY --from=backend-builder /usr/local/bin /usr/local/bin
 COPY backend/ ./backend/
 COPY db/ ./db/
 
-# Copy environment file
-COPY .env .env
+# Copy .env file if it exists (for local development only)
+COPY .env* ./
 
 # Copy built frontend from frontend-builder stage
 COPY --from=frontend-builder /app/dist ./dist
@@ -76,15 +90,18 @@ COPY --from=frontend-builder /app/node_modules ./node_modules
 RUN mkdir -p /app/logs /app/backend/images && \
     chown -R appuser:appuser /app
 
-# Create startup script for both services
+# Create startup script that works for both local and cloud environments
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-# Load environment variables from .env file\n\
+# Load environment variables from .env file if it exists (local development)\n\
 if [ -f "/app/.env" ]; then\n\
-    echo "Loading environment variables from .env file..."\n\
+    echo "Loading environment variables from .env file (local development)..."\n\
     export $(grep -v "^#" /app/.env | xargs)\n\
-    echo "Environment variables loaded. PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+    echo "Environment loaded from .env file."\n\
+else\n\
+    echo "No .env file found. Using environment variables from cloud platform."\n\
+    echo "PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
 fi\n\
 \n\
 echo "Starting FastAPI backend..."\n\
@@ -122,7 +139,7 @@ EXPOSE 4321 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8000/ && curl -f http://localhost:4321/ || exit 1
 
-# Default environment variables (can be overridden with .env file)
+# Default environment variables (can be overridden)
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     ENVIRONMENT=production \
