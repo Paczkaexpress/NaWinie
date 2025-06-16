@@ -6,6 +6,9 @@ FROM node:18-slim AS frontend-builder
 
 WORKDIR /app
 
+# Copy environment file first so it's available during build
+COPY .env .env
+
 # Copy frontend package files
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -21,8 +24,8 @@ RUN npm install --include=optional
 COPY src/ ./src/
 COPY public/ ./public/
 
-# Build the Astro frontend for server-side rendering
-RUN npm run build
+# Load environment variables and build the Astro frontend
+RUN export $(grep -v '^#' .env | xargs) && npm run build
 
 # Stage 2: Setup Python Backend
 FROM python:3.11-slim AS backend-builder
