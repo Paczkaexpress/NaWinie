@@ -28,19 +28,8 @@ export const useImageUpload = (): UseImageUploadReturn => {
       return 'Plik jest za duży (max 1MB)';
     }
 
-    // Check if file is actually an image
-    return new Promise<string | null>((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        URL.revokeObjectURL(img.src);
-        resolve(null); // Valid image
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        resolve('Plik nie jest prawidłowym obrazem');
-      };
-      img.src = URL.createObjectURL(file);
-    }) as any; // Type assertion for synchronous usage
+    // Basic validation only - async validation will be done in selectImage
+    return null;
   }, []);
 
   const selectImage = useCallback(async (file: File) => {

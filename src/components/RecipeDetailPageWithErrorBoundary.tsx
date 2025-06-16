@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ErrorBoundary } from './ErrorBoundary';
+import ErrorBoundary from './ErrorBoundary';
 import RecipeDetailPage from './RecipeDetailPage';
 import { getRecipeById } from '../lib/api';
 import type { RecipeDetailDto } from '../types';
@@ -230,7 +230,7 @@ export default function RecipeDetailPageWithErrorBoundary({
   }
 
   return (
-    <ErrorBoundary fallback={RecipeDetailErrorFallback} onError={handleError}>
+    <ErrorBoundary onError={handleError}>
       <RecipeDetailPage initialRecipe={recipe} />
     </ErrorBoundary>
   );

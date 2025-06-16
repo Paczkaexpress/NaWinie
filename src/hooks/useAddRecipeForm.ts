@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { CreateRecipeFormData, CreateRecipeCommand } from '../types';
+import { authService } from '../lib/auth';
 
 interface UseAddRecipeFormReturn {
   formData: CreateRecipeFormData;
@@ -61,11 +62,12 @@ export const useAddRecipeForm = (): UseAddRecipeFormReturn => {
     try {
       const command = transformFormDataToCommand(formData);
       
-      // Get auth token
-      const token = localStorage.getItem('access_token');
-      if (!token) {
+      // Get auth session and token
+      const session = await authService.getSession();
+      if (!session?.access_token) {
         throw new Error('Brak tokenu uwierzytelniania');
       }
+      const token = session.access_token;
 
       // Prepare form data for submission (including image if present)
       let body: any;
@@ -99,9 +101,9 @@ export const useAddRecipeForm = (): UseAddRecipeFormReturn => {
           case 400:
             throw new Error(errorData.message || 'Nieprawidłowe dane formularza');
           case 401:
-            // Token expired or invalid - redirect to login
-            localStorage.removeItem('access_token');
-            window.location.href = '/auth?returnUrl=' + encodeURIComponent('/recipes/new');
+            // Token expired or invalid - logout and redirect to login
+            await authService.logout();
+            window.location.href = '/auth?returnUrl=' + encodeURIComponent('/add-recipe');
             return false;
           case 403:
             throw new Error('Brak uprawnień do dodawania przepisów');

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ErrorBoundary } from './ErrorBoundary';
+import ErrorBoundary from './ErrorBoundary';
 import { SkipLink, LiveAnnouncement, ProgressIndicator, AccessibleFieldset } from './AccessibilityImprovements';
 import AddRecipeForm from './AddRecipeForm';
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RecipeListItemDto, PaginatedRecipesDto } from "@/types";
 import { findRecipesByIngredients } from "@/lib/api";
 
@@ -18,54 +18,54 @@ const useRecipeSearch = (ingredientIds: string[]): UseRecipeSearchResult => {
   const [error, setError] = useState<Error | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
-  const prevIngredientIdsRef = useRef<string[]>([]);
 
-  /* Reset and load first page when ingredientIds change */
   useEffect(() => {
-    const currentIds = ingredientIds.join(',');
-    const prevIds = prevIngredientIdsRef.current.join(',');
-    
-    if (currentIds !== prevIds) {
-      prevIngredientIdsRef.current = ingredientIds;
-      
-      // Reset state
+    if (ingredientIds.length === 0) {
       setRecipes([]);
       setPage(1);
-      setError(null);
       setHasMore(false);
-      
-      // Load first page if we have ingredients
-      if (ingredientIds.length > 0) {
-        loadFirstPage();
-      }
+      return;
     }
-  }, [ingredientIds]);
 
-  const loadFirstPage = useCallback(async () => {
-    if (ingredientIds.length === 0 || isLoading) return;
-    
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data: PaginatedRecipesDto = await findRecipesByIngredients(
-        ingredientIds,
-        1,
-        PAGE_SIZE
-      );
-      setRecipes(data.data);
-      setHasMore(data.pagination.page < data.pagination.total_pages);
-      setPage(2); // Next page to load
-    } catch (err) {
-      setError(err as Error);
-      console.error("Error loading recipes:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ingredientIds, isLoading]);
+    let isCancelled = false;
+
+    const fetchFirstPage = async () => {
+      // Reset state for new search
+      setRecipes([]);
+      setPage(1);
+      setHasMore(false);
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const data = await findRecipesByIngredients(ingredientIds, 1, PAGE_SIZE);
+        if (!isCancelled) {
+          setRecipes(data.data);
+          setHasMore(data.pagination.page < data.pagination.total_pages);
+          setPage(data.pagination.page + 1);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setError(err as Error);
+          console.error("Error loading recipes:", err);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchFirstPage();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [JSON.stringify(ingredientIds)]); // Using stringify for deep comparison
 
   const loadMore = useCallback(async () => {
-    if (ingredientIds.length === 0 || isLoading || !hasMore) return;
-    
+    if (isLoading || !hasMore) return;
+
     setIsLoading(true);
     setError(null);
     try {

@@ -89,8 +89,8 @@ describe('AddRecipeForm Integration', () => {
     // Check for section headers using simple text queries
     expect(screen.queryByText('Podstawowe informacje')).toBeTruthy();
     expect(screen.queryByText('Zdjęcie przepisu')).toBeTruthy();
-    expect(screen.queryByText('Składniki')).toBeTruthy();
-    expect(screen.queryByText('Kroki przygotowania')).toBeTruthy();
+    expect(screen.queryByText(/Składniki \(/)).toBeTruthy();
+    expect(screen.queryByText(/Sposób przygotowania \(/)).toBeTruthy();
   });
 
   it('has form input fields', () => {
@@ -116,19 +116,24 @@ describe('AddRecipeForm Integration', () => {
     // Check for specific button text
     expect(screen.queryByText(/anuluj/i)).toBeTruthy();
     expect(screen.queryByText(/zapisz/i)).toBeTruthy();
-    expect(screen.queryByText(/dodaj składnik/i)).toBeTruthy();
-    expect(screen.queryByText(/dodaj krok/i)).toBeTruthy();
+    
+    // Use getByRole to get specific buttons
+    const addIngredientButton = screen.getByRole('button', { name: /dodaj składnik/i });
+    expect(addIngredientButton).toBeTruthy();
+    
+    const addStepButton = screen.getByRole('button', { name: /dodaj krok/i });
+    expect(addStepButton).toBeTruthy();
   });
 
   it('allows basic interactions', async () => {
     const user = userEvent.setup();
     render(<AddRecipeForm />);
     
-    // Try to interact with add buttons
-    const addIngredientBtn = screen.getByText(/dodaj składnik/i);
+    // Try to interact with add buttons using more specific selectors
+    const addIngredientBtn = screen.getByRole('button', { name: /dodaj składnik/i });
     await user.click(addIngredientBtn);
     
-    const addStepBtn = screen.getByText(/dodaj krok/i);
+    const addStepBtn = screen.getByRole('button', { name: /dodaj krok/i });
     await user.click(addStepBtn);
     
     // These interactions should not throw errors

@@ -9,7 +9,28 @@ expect.extend(matchers);
 import.meta.env.PUBLIC_SUPABASE_URL = "https://mock-supabase-url.supabase.co";
 import.meta.env.PUBLIC_SUPABASE_ANON_KEY = "mock-anon-key-for-testing";
 
+// Set NODE_ENV to test mode
+if (typeof process !== 'undefined') {
+  process.env.NODE_ENV = 'test';
+}
+
 const API_BASE_URL = "http://localhost:8000/api";
+
+// Set up JSDOM location for relative URLs
+Object.defineProperty(window, 'location', {
+  value: {
+    href: 'http://localhost:8000',
+    origin: 'http://localhost:8000',
+    protocol: 'http:',
+    host: 'localhost:8000',
+    hostname: 'localhost',
+    port: '8000',
+    pathname: '/',
+    search: '',
+    hash: ''
+  },
+  writable: true
+});
 
 // Mock API handlers  
 const handlers = [

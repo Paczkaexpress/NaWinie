@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AddRecipeForm from './AddRecipeForm';
+import { authService } from '../lib/auth';
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -9,20 +10,24 @@ const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if user is authenticated by looking for token
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      // TODO: Verify token validity with API
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
+    // Check if user is authenticated using Supabase
+    const checkAuth = async () => {
+      try {
+        const isAuth = await authService.isAuthenticated();
+        setIsAuthenticated(isAuth);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   useEffect(() => {
     if (isAuthenticated === false) {
       // Redirect to auth page with return URL
-      const returnUrl = encodeURIComponent('/recipes/new');
+      const returnUrl = encodeURIComponent('/add-recipe');
       window.location.href = `/auth?returnUrl=${returnUrl}`;
     }
   }, [isAuthenticated]);

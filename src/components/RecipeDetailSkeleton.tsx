@@ -6,7 +6,12 @@ interface RecipeDetailSkeletonProps {
 
 export default function RecipeDetailSkeleton({ className = '' }: RecipeDetailSkeletonProps) {
   return (
-    <div className={`max-w-4xl mx-auto px-4 py-8 ${className}`} data-testid="recipe-detail-skeleton">
+    <div 
+      className={`max-w-4xl mx-auto px-4 py-8 ${className}`} 
+      data-testid="recipe-detail-skeleton"
+      role="status"
+      aria-live="polite"
+    >
       <div className="animate-pulse">
         {/* Back Button Skeleton */}
         <div className="h-10 bg-gray-200 rounded-lg w-24 mb-6"></div>

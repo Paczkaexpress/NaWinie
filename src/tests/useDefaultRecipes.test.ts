@@ -54,8 +54,9 @@ describe("useDefaultRecipes", () => {
       pagination: { page: 2, limit: 12, total_items: 2, total_pages: 2 },
     };
 
+    // Set up test-specific handlers after resetHandlers() is called
     server.use(
-      http.get("http://localhost:8000/api/recipes", ({ request }) => {
+      http.get("http://mock-api.test/api/recipes", ({ request }) => {
         const url = new URL(request.url);
         const page = Number(url.searchParams.get("page"));
         return HttpResponse.json(page === 1 ? mockResponsePage1 : mockResponsePage2);

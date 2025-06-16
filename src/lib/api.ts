@@ -12,12 +12,18 @@ interface FetchOptions extends RequestInit {
 // Fast timeout and no retries for quicker fallback to Supabase
 const DEFAULT_TIMEOUT = 500; // 500ms timeout instead of 5000ms
 const DEFAULT_RETRIES = 0; // No retries instead of 3 retries
-const API_BASE_URL = "http://localhost:8000/api"; // Backend API base URL
-
-// Skip local backend by default unless explicitly enabled, but always use it in tests
-const USE_LOCAL_BACKEND = import.meta.env.PUBLIC_USE_LOCAL_BACKEND === 'true' || 
-  (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') ||
+// Use a mock URL in test environment
+const isTest = (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') ||
   (typeof import.meta.env.MODE !== 'undefined' && import.meta.env.MODE === 'test');
+
+const API_BASE_URL = isTest ? "http://mock-api.test/api" : "http://localhost:8000/api";
+
+// Ensure we never have an empty API_BASE_URL  
+const SAFE_API_BASE_URL = API_BASE_URL || "http://mock-api.test/api";
+
+// In test environment, always use local backend so MSW can intercept HTTP calls
+// In production, only use if explicitly enabled
+const USE_LOCAL_BACKEND = isTest || import.meta.env.PUBLIC_USE_LOCAL_BACKEND === 'true';
 
 async function fetchWithRetry<T>(url: string, options: FetchOptions = {}): Promise<T> {
   const { timeoutMs = DEFAULT_TIMEOUT, retry = DEFAULT_RETRIES, ...fetchOpts } = options;
@@ -59,7 +65,7 @@ export async function searchIngredients(
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
     try {
-      const url = new URL(`${API_BASE_URL}/ingredients`);
+      const url = new URL(`${SAFE_API_BASE_URL}/ingredients`);
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', limit.toString());
       if (query) {
@@ -129,7 +135,7 @@ export async function findRecipesByIngredients(
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
     try {
-      const url = new URL(`${API_BASE_URL}/recipes/find-by-ingredients`);
+      const url = new URL(`${SAFE_API_BASE_URL}/recipes/find-by-ingredients`);
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', limit.toString());
       ingredientIds.forEach(id => url.searchParams.append('ingredient_ids', id));
@@ -213,7 +219,7 @@ export async function getRecipes(page = 1, limit = 10): Promise<PaginatedRecipes
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
     try {
-      const url = new URL(`${API_BASE_URL}/recipes`);
+      const url = new URL(`${SAFE_API_BASE_URL}/recipes`);
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', limit.toString());
       
@@ -269,7 +275,7 @@ export async function searchRecipes(
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
     try {
-      const url = new URL(`${API_BASE_URL}/recipes`);
+      const url = new URL(`${SAFE_API_BASE_URL}/recipes`);
       url.searchParams.set('page', page.toString());
       url.searchParams.set('limit', limit.toString());
       url.searchParams.set('search', trimmedQuery);
@@ -341,7 +347,7 @@ export async function getRecipeById(id: string, options?: FetchOptions): Promise
   // Only try local backend if explicitly enabled
   if (USE_LOCAL_BACKEND) {
     try {
-      const url = new URL(`${API_BASE_URL}/recipes/${id}`);
+      const url = new URL(`${SAFE_API_BASE_URL}/recipes/${id}`);
       return await fetchWithRetry<RecipeDetailDto>(url.toString(), options);
     } catch (error) {
       console.error('Error fetching recipe from HTTP API, trying Supabase:', error);

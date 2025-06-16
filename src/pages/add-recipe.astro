@@ -1,0 +1,36 @@
+---
+import Layout from '../layouts/Layout.astro';
+import EnhancedAddRecipeForm from '../components/EnhancedAddRecipeForm';
+import UserAuth from '../components/UserAuth';
+---
+
+<Layout title="Dodaj przepis - Na Winie">
+	<!-- Header Section -->
+	<header class="bg-gradient-to-r from-orange-500 to-yellow-500 text-white shadow-lg">
+		<div class="container mx-auto px-4 py-6">
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-3xl font-bold">Dodaj nowy przepis</h1>
+					<p class="text-lg mt-2 opacity-90">Podziel się swoim kulinarnym pomysłem</p>
+				</div>
+				<div class="flex items-center gap-4">
+					<a 
+						href="/" 
+						class="text-white hover:text-orange-200 transition-colors duration-200 flex items-center gap-2"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m0 7h18"></path>
+						</svg>
+						Powrót do strony głównej
+					</a>
+					<UserAuth client:load />
+				</div>
+			</div>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="min-h-screen bg-gray-50">
+		<EnhancedAddRecipeForm client:load />
+	</main>
+</Layout> 

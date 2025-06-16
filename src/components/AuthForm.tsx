@@ -69,15 +69,39 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onSubmit, isLoading = false,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('📝 AuthForm: Form submit event triggered');
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('📝 AuthForm: Form data:', { email: formData.email, hasPassword: !!formData.password });
+    
+    if (!validateForm()) {
+      console.log('📝 AuthForm: Form validation failed');
+      return;
+    }
 
+    console.log('📝 AuthForm: Form validation passed, calling onSubmit...');
+    
+    // Prepare form data based on mode
+    const submitData: AuthFormData = {
+      email: formData.email,
+      password: formData.password,
+      // Only include confirmPassword in registration mode
+      ...(isLoginMode ? {} : { confirmPassword: formData.confirmPassword })
+    };
+    
+    console.log('📝 AuthForm: Submit data prepared:', { 
+      email: submitData.email, 
+      hasPassword: !!submitData.password,
+      hasConfirmPassword: submitData.confirmPassword !== undefined,
+      isLoginMode 
+    });
+    
     try {
-      await onSubmit(formData);
+      await onSubmit(submitData);
+      console.log('📝 AuthForm: onSubmit completed successfully');
     } catch (error) {
       // Error handling is done in parent component
-      console.error('Auth error:', error);
+      console.error('📝 AuthForm: Error in onSubmit:', error);
     }
   };
 

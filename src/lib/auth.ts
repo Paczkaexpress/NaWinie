@@ -19,19 +19,31 @@ interface AuthResponse {
 
 class AuthService {
   async login(credentials: LoginRequest): Promise<AuthResponse> {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
-    });
+    console.log('🔐 AuthService: Starting login process...', { email: credentials.email });
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      });
 
-    if (error) {
-      throw new Error(error.message || 'Login failed');
+      console.log('🔐 AuthService: Supabase response:', { data, error });
+
+      if (error) {
+        console.error('🔐 AuthService: Login error:', error);
+        throw new Error(error.message || 'Login failed');
+      }
+
+      console.log('🔐 AuthService: Login successful!', { user: data.user?.email });
+      
+      return {
+        user: data.user,
+        session: data.session,
+      };
+    } catch (err) {
+      console.error('🔐 AuthService: Unexpected error during login:', err);
+      throw err;
     }
-
-    return {
-      user: data.user,
-      session: data.session,
-    };
   }
 
   async register(userData: RegisterRequest): Promise<AuthResponse> {

@@ -44,7 +44,7 @@ const AddRecipeForm: React.FC = () => {
     setShowRestoreDialog(false);
   }, [clearFormData]);
 
-  const handleBasicInfoChange = useCallback((field: keyof typeof formData, value: any) => {
+  const handleBasicInfoChange = useCallback((field: string, value: any) => {
     updateFormData({ [field]: value });
     clearFieldError(field as any);
   }, [updateFormData, clearFieldError]);
@@ -163,7 +163,6 @@ const AddRecipeForm: React.FC = () => {
         <IngredientsSection
           ingredients={formData.ingredients}
           onIngredientsChange={handleIngredientsChange}
-          availableIngredients={ingredients}
           errors={errors.ingredients}
         />
 
