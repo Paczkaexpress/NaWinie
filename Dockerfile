@@ -101,7 +101,11 @@ RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
 echo "=== Na Winie Application Startup ==="\n\
+echo "Current time: $(date)"\n\
 echo "Port: ${PORT:-8080}"\n\
+echo "Environment: ${ENVIRONMENT:-production}"\n\
+echo "User: $(whoami)"\n\
+echo "Working directory: $(pwd)"\n\
 echo\n\
 \n\
 # Check for required environment variables\n\
@@ -112,16 +116,14 @@ for var in "${required_vars[@]}"; do\n\
     if [ -z "${!var}" ]; then\n\
         missing_vars+=("$var")\n\
     else\n\
-        echo "✓ $var is set"\n\
+        echo "✓ $var is set (length: ${#var})")\n\
     fi\n\
 done\n\
 \n\
 if [ ${#missing_vars[@]} -ne 0 ]; then\n\
     echo "❌ Missing required environment variables:"\n\
     printf "   %s\n" "${missing_vars[@]}"\n\
-    echo\n\
-    echo "Please set these environment variables in your Cloud Run service."\n\
-    echo "Continuing startup with warnings..."\n\
+    echo "Will continue with warnings..."\n\
 else\n\
     echo "✅ All required environment variables are set"\n\
 fi\n\
@@ -136,34 +138,78 @@ export JWT_SECRET_KEY="${JWT_SECRET_KEY:-}"\n\
 export DATABASE_URL="${DATABASE_URL:-sqlite:///./backend/nawinie.db}"\n\
 export CORS_ORIGINS="${CORS_ORIGINS:-*}"\n\
 \n\
+# Set NODE_ENV to production\n\
+export NODE_ENV=production\n\
+\n\
+echo "📁 Checking application files..."\n\
+ls -la /app/ | head -10\n\
+echo\n\
+\n\
 # Configure frontend environment variables\n\
-source /app/configure-env.sh\n\
-configure_frontend_env\n\
+if [ -f "/app/configure-env.sh" ]; then\n\
+    echo "🔧 Configuring frontend environment..."\n\
+    source /app/configure-env.sh\n\
+    configure_frontend_env\n\
+else\n\
+    echo "⚠️  Frontend environment configuration script not found"\n\
+fi\n\
 \n\
 # Start FastAPI backend in background\n\
 echo "🚀 Starting FastAPI backend on port 8000..."\n\
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
-BACKEND_PID=$!\n\
-\n\
-# Wait a moment for backend to start\n\
-sleep 3\n\
-\n\
-# Start Astro frontend on the main port\n\
-MAIN_PORT=${PORT:-8080}\n\
-echo "🌐 Starting Astro frontend on port $MAIN_PORT..."\n\
-\n\
 cd /app\n\
 \n\
-# Check if Astro build exists\n\
-if [ ! -f "/app/dist/server/entry.mjs" ]; then\n\
-    echo "❌ Astro server entry point not found"\n\
-    ls -la /app/dist/ || echo "dist directory not found"\n\
+# Start backend with output redirection\n\
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 > /app/logs/backend.log 2>&1 &\n\
+BACKEND_PID=$!\n\
+echo "Backend started with PID: $BACKEND_PID"\n\
+\n\
+# Wait for backend to start and test it\n\
+echo "⏳ Waiting for backend to be ready..."\n\
+for i in {1..10}; do\n\
+    if curl -f http://localhost:8000/ >/dev/null 2>&1; then\n\
+        echo "✅ Backend is responding"\n\
+        break\n\
+    fi\n\
+    echo "   Attempt $i/10 - waiting 2 seconds..."\n\
+    sleep 2\n\
+done\n\
+\n\
+# Check if backend is still running\n\
+if ! kill -0 $BACKEND_PID 2>/dev/null; then\n\
+    echo "❌ Backend process died during startup"\n\
+    echo "Backend logs:"\n\
+    cat /app/logs/backend.log\n\
     exit 1\n\
 fi\n\
 \n\
-echo "✅ Starting main application on port $MAIN_PORT"\n\
-echo "   - Backend API: http://localhost:8000 (internal)"\n\
-echo "   - Frontend: http://localhost:$MAIN_PORT (main service)"\n\
+# Prepare frontend startup\n\
+MAIN_PORT=${PORT:-8080}\n\
+echo "🌐 Starting Astro frontend on port $MAIN_PORT..."\n\
+echo "Node version: $(node --version)"\n\
+echo "NPM version: $(npm --version)"\n\
+\n\
+# Check if Astro build exists\n\
+echo "📦 Checking Astro build..."\n\
+if [ ! -f "/app/dist/server/entry.mjs" ]; then\n\
+    echo "❌ Astro server entry point not found at /app/dist/server/entry.mjs"\n\
+    echo "Contents of /app/dist:"\n\
+    ls -la /app/dist/ || echo "dist directory not found"\n\
+    echo "Contents of /app/dist/server:"\n\
+    ls -la /app/dist/server/ || echo "dist/server directory not found"\n\
+    exit 1\n\
+else\n\
+    echo "✅ Astro build found"\n\
+fi\n\
+\n\
+# Test if the port is free\n\
+if netstat -tuln | grep ":$MAIN_PORT " >/dev/null; then\n\
+    echo "❌ Port $MAIN_PORT is already in use"\n\
+    netstat -tuln | grep ":$MAIN_PORT"\n\
+    exit 1\n\
+fi\n\
+\n\
+echo "🚀 Starting Astro server..."\n\
+echo "Command: HOST=0.0.0.0 PORT=$MAIN_PORT node dist/server/entry.mjs"\n\
 \n\
 # Function to handle shutdown\n\
 shutdown() {\n\
@@ -175,12 +221,42 @@ shutdown() {\n\
 # Trap SIGTERM and SIGINT\n\
 trap shutdown SIGTERM SIGINT\n\
 \n\
-# Start Astro frontend as the main process\n\
-exec HOST=0.0.0.0 PORT=$MAIN_PORT node dist/server/entry.mjs\n\
+# Start Astro frontend as the main process with timeout\n\
+timeout 30 bash -c "HOST=0.0.0.0 PORT=$MAIN_PORT node dist/server/entry.mjs" &\n\
+FRONTEND_PID=$!\n\
+\n\
+# Wait a few seconds to see if it starts successfully\n\
+sleep 5\n\
+\n\
+if kill -0 $FRONTEND_PID 2>/dev/null; then\n\
+    echo "✅ Frontend started successfully with PID: $FRONTEND_PID"\n\
+    echo "🎉 Application is ready on port $MAIN_PORT"\n\
+    \n\
+    # Wait for the frontend process to complete\n\
+    wait $FRONTEND_PID\n\
+else\n\
+    echo "❌ Frontend failed to start or died quickly"\n\
+    echo "Trying alternative startup method..."\n\
+    \n\
+    # Try without timeout\n\
+    exec HOST=0.0.0.0 PORT=$MAIN_PORT node dist/server/entry.mjs\n\
+fi\n\
 ' > /app/start.sh
 
 RUN chmod +x /app/start.sh /app/configure-env.sh && \
-    chown appuser:appuser /app/start.sh /app/configure-env.sh
+    chown -R appuser:appuser /app
+
+# Create a simple fallback startup script if the main one fails
+RUN echo '#!/bin/bash\n\
+echo "=== FALLBACK STARTUP ==="\n\
+export PORT=${PORT:-8080}\n\
+export NODE_ENV=production\n\
+cd /app\n\
+echo "Starting simple Astro server on port $PORT"\n\
+exec HOST=0.0.0.0 PORT=$PORT node dist/server/entry.mjs\n\
+' > /app/fallback-start.sh && \
+    chmod +x /app/fallback-start.sh && \
+    chown appuser:appuser /app/fallback-start.sh
 
 # Switch to non-root user
 USER appuser
@@ -189,8 +265,8 @@ USER appuser
 EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=120s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/health > /dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8080}/ > /dev/null 2>&1 || exit 1
 
 # Default environment variables (can be overridden at runtime)
 ENV PYTHONPATH=/app \
