@@ -53,6 +53,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     jq \
+    nginx \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
@@ -73,6 +74,59 @@ COPY --from=frontend-builder /app/node_modules ./node_modules
 # Create necessary directories
 RUN mkdir -p /app/logs /app/backend/images && \
     chown -R appuser:appuser /app
+
+# Create nginx configuration for reverse proxy
+RUN echo 'server {\n\
+    listen 8080;\n\
+    server_name localhost;\n\
+    \n\
+    # Frontend (Astro) - serve from port 4321\n\
+    location / {\n\
+        proxy_pass http://localhost:4321;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Upgrade $http_upgrade;\n\
+        proxy_set_header Connection "upgrade";\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+        proxy_set_header X-Forwarded-Proto $scheme;\n\
+        proxy_cache_bypass $http_upgrade;\n\
+        proxy_read_timeout 86400;\n\
+    }\n\
+    \n\
+    # Backend API - proxy to FastAPI on port 8000\n\
+    location /api/ {\n\
+        proxy_pass http://localhost:8000/api/;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Upgrade $http_upgrade;\n\
+        proxy_set_header Connection "upgrade";\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+        proxy_set_header X-Forwarded-Proto $scheme;\n\
+        proxy_cache_bypass $http_upgrade;\n\
+    }\n\
+    \n\
+    # Backend docs and other endpoints\n\
+    location /docs {\n\
+        proxy_pass http://localhost:8000/docs;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+        proxy_set_header X-Forwarded-Proto $scheme;\n\
+    }\n\
+    \n\
+    location /openapi.json {\n\
+        proxy_pass http://localhost:8000/openapi.json;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Host $host;\n\
+        proxy_set_header X-Real-IP $remote_addr;\n\
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;\n\
+        proxy_set_header X-Forwarded-Proto $scheme;\n\
+    }\n\
+}\n\
+' > /etc/nginx/sites-available/default
 
 # Create runtime environment configuration script
 RUN echo '#!/bin/bash\n\
@@ -102,7 +156,9 @@ set -e\n\
 \n\
 echo "=== Na Winie Application Startup ==="\n\
 echo "Environment: ${ENVIRONMENT:-production}"\n\
-echo "Port: ${PORT:-4321}"\n\
+echo "Main Port (nginx): 8080"\n\
+echo "Frontend Port: 4321"\n\
+echo "Backend Port: 8000"\n\
 echo\n\
 \n\
 # Check for required environment variables\n\
@@ -148,22 +204,19 @@ configure_frontend_env\n\
 \n\
 echo "Starting services..."\n\
 \n\
-# Start FastAPI backend\n\
+# Start FastAPI backend on port 8000\n\
 echo "🚀 Starting FastAPI backend on port 8000..."\n\
 uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
 BACKEND_PID=$!\n\
 \n\
-# Wait a moment for backend to start\n\
+# Wait for backend to start\n\
 sleep 3\n\
 \n\
-# Start Astro frontend with proper environment variables\n\
-FRONTEND_PORT=${PORT:-4321}\n\
-echo "🌐 Starting Astro frontend on port $FRONTEND_PORT..."\n\
+# Start Astro frontend on port 4321\n\
+echo "🌐 Starting Astro frontend on port 4321..."\n\
 echo "Frontend environment variables:"\n\
 echo "  PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
 echo "  PUBLIC_USE_LOCAL_BACKEND: ${PUBLIC_USE_LOCAL_BACKEND}"\n\
-echo "  HOST: 0.0.0.0"\n\
-echo "  PORT: $FRONTEND_PORT"\n\
 \n\
 cd /app\n\
 \n\
@@ -177,9 +230,9 @@ if [ ! -f "/app/dist/server/entry.mjs" ]; then\n\
     exit 1\n\
 fi\n\
 \n\
-# Start Astro with error handling\n\
-echo "Starting Astro server..."\n\
-if ! HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
+# Start Astro on port 4321\n\
+echo "Starting Astro server on port 4321..."\n\
+if ! HOST=0.0.0.0 PORT=4321 node dist/server/entry.mjs &\n\
 then\n\
     echo "❌ Failed to start Astro server"\n\
     exit 1\n\
@@ -188,47 +241,44 @@ fi\n\
 FRONTEND_PID=$!\n\
 echo "✅ Frontend started with PID: $FRONTEND_PID"\n\
 \n\
-# Wait a moment to check if frontend started successfully\n\
+# Wait for frontend to start\n\
 sleep 5\n\
 \n\
-# Check if frontend process is still running\n\
-if ! kill -0 $FRONTEND_PID 2>/dev/null; then\n\
-    echo "❌ Frontend process died after startup"\n\
-    echo "Last 50 lines of system logs:"\n\
-    tail -50 /var/log/syslog 2>/dev/null || echo "No system logs available"\n\
+# Check if both services are running\n\
+if ! kill -0 $BACKEND_PID 2>/dev/null; then\n\
+    echo "❌ Backend process died after startup"\n\
     exit 1\n\
 fi\n\
 \n\
-# Test if frontend is responding\n\
-echo "Testing frontend health..."\n\
-sleep 2\n\
-if curl -f http://localhost:$FRONTEND_PORT/health >/dev/null 2>&1; then\n\
-    echo "✅ Frontend health check passed"\n\
-else\n\
-    echo "⚠️  Frontend health check failed, but process is running"\n\
-    echo "Checking if main page is accessible..."\n\
-    if curl -f http://localhost:$FRONTEND_PORT/ >/dev/null 2>&1; then\n\
-        echo "✅ Frontend main page is accessible"\n\
-    else\n\
-        echo "❌ Frontend main page is not accessible"\n\
-        echo "Process status:"\n\
-        ps aux | grep node || echo "No node processes found"\n\
-        echo "Port status:"\n\
-        netstat -tlnp | grep $FRONTEND_PORT || echo "Port $FRONTEND_PORT not listening"\n\
-    fi\n\
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then\n\
+    echo "❌ Frontend process died after startup"\n\
+    exit 1\n\
 fi\n\
 \n\
-echo\n\
-echo "✅ Both services started successfully!"\n\
+# Start nginx as the main service on port 8080\n\
+echo "🌐 Starting nginx reverse proxy on port 8080..."\n\
+\n\
+# Test nginx configuration\n\
+nginx -t\n\
+if [ $? -ne 0 ]; then\n\
+    echo "❌ Nginx configuration test failed"\n\
+    exit 1\n\
+fi\n\
+\n\
+# Start nginx in foreground (this keeps the container running)\n\
+echo "✅ All services started successfully!"\n\
 echo "   - Backend: http://localhost:8000 (PID: $BACKEND_PID)"\n\
-echo "   - Frontend: http://localhost:$FRONTEND_PORT (PID: $FRONTEND_PID)"\n\
-echo "   - API Docs: http://localhost:8000/docs"\n\
+echo "   - Frontend: http://localhost:4321 (PID: $FRONTEND_PID)"\n\
+echo "   - Nginx Proxy: http://localhost:8080 (main service)"\n\
+echo "   - API Docs: http://localhost:8080/docs"\n\
 echo\n\
+echo "🚀 Ready to serve requests on port 8080"\n\
 \n\
 # Function to handle shutdown\n\
 shutdown() {\n\
     echo\n\
     echo "🛑 Shutting down services..."\n\
+    nginx -s quit 2>/dev/null || true\n\
     kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
     wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
     echo "👋 Shutdown complete"\n\
@@ -238,8 +288,8 @@ shutdown() {\n\
 # Trap SIGTERM and SIGINT\n\
 trap shutdown SIGTERM SIGINT\n\
 \n\
-# Wait for processes\n\
-wait $BACKEND_PID $FRONTEND_PID\n\
+# Start nginx in foreground (this is the main process)\n\
+exec nginx -g "daemon off;"\n\
 ' > /app/start.sh
 
 RUN chmod +x /app/start.sh /app/configure-env.sh && \
@@ -249,11 +299,11 @@ RUN chmod +x /app/start.sh /app/configure-env.sh && \
 USER appuser
 
 # Expose ports
-EXPOSE 4321 8000 8080
+EXPOSE 8080
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/docs > /dev/null && curl -f http://localhost:${PORT:-4321}/ > /dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=30s --start-period=90s --retries=3 \
+    CMD curl -f http://localhost:8080/health > /dev/null || exit 1
 
 # Default environment variables (can be overridden at runtime)
 ENV PYTHONPATH=/app \

@@ -7,7 +7,21 @@ This guide explains how to deploy your Na Winie application to Google Cloud usin
 Your updated Docker container now:
 1. **Builds the frontend with placeholder values** (no secrets needed at build time)
 2. **Injects real environment variables at runtime** when the container starts
-3. **Automatically configures both frontend and backend** using environment variables from Google Cloud
+3. **Uses nginx as a reverse proxy** on port 8080 (Cloud Run requirement)
+4. **Runs backend on port 8000** and **frontend on port 4321** behind nginx
+5. **Automatically configures both frontend and backend** using environment variables from Google Cloud
+
+### Architecture:
+```
+Cloud Run (port 8080) → nginx → Frontend (port 4321)
+                              → Backend API (port 8000)
+```
+
+This setup ensures:
+- Cloud Run only sees one service on port 8080 ✅
+- Frontend and backend can communicate internally
+- All API calls go through `/api/` path
+- Static files are served efficiently
 
 ## 🚀 Deployment Steps
 
@@ -151,14 +165,30 @@ If you're seeing a 500 error with Astro SSR errors in the logs, here's how to de
 
 4. **Redeploy with latest fixes:**
    ```bash
-   # Rebuild and redeploy
+   # Rebuild and redeploy with the new nginx-based architecture
    docker build -t nawinie .
    docker tag nawinie gcr.io/YOUR_PROJECT_ID/nawinie:latest
    docker push gcr.io/YOUR_PROJECT_ID/nawinie:latest
    
    # Update the service to use the new image
    gcloud run services update nawinie --region=us-central1 \
-     --image gcr.io/YOUR_PROJECT_ID/nawinie:latest
+     --image gcr.io/YOUR_PROJECT_ID/nawinie:latest \
+     --port 8080 \
+     --cpu 2 \
+     --memory 4Gi \
+     --timeout 300
+   ```
+
+5. **Check the new architecture:**
+   ```bash
+   # Check if the service is responding on port 8080
+   curl https://your-service-url/health
+   
+   # Check API endpoint
+   curl https://your-service-url/api/ingredients
+   
+   # Check docs
+   curl https://your-service-url/docs
    ```
 
 ### Environment Variables Not Loading
