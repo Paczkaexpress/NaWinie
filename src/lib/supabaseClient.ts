@@ -15,10 +15,26 @@ declare global {
 function getRuntimeConfig() {
   // Browser environment - use runtime config if available
   if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
-    return window.__RUNTIME_CONFIG__;
+    const config = window.__RUNTIME_CONFIG__;
+    // Check if we have actual values or just placeholders
+    if (config.PUBLIC_SUPABASE_URL && 
+        !config.PUBLIC_SUPABASE_URL.includes('placeholder') && 
+        config.PUBLIC_SUPABASE_ANON_KEY && 
+        !config.PUBLIC_SUPABASE_ANON_KEY.includes('placeholder')) {
+      return config;
+    }
+    console.warn('Runtime config contains placeholder values, checking other sources...');
   }
   
-  // Server-side rendering - use build-time environment variables
+  // Server-side rendering - use runtime environment variables first, then build-time
+  if (typeof process !== 'undefined' && process.env) {
+    return {
+      PUBLIC_SUPABASE_URL: process.env.PUBLIC_SUPABASE_URL || import.meta.env?.PUBLIC_SUPABASE_URL,
+      PUBLIC_SUPABASE_ANON_KEY: process.env.PUBLIC_SUPABASE_ANON_KEY || import.meta.env?.PUBLIC_SUPABASE_ANON_KEY,
+    };
+  }
+  
+  // Build-time fallback
   if (typeof import.meta !== 'undefined' && import.meta.env) {
     return {
       PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
@@ -26,7 +42,7 @@ function getRuntimeConfig() {
     };
   }
   
-  // Fallback for edge cases
+  // Final fallback for edge cases
   return {
     PUBLIC_SUPABASE_URL: undefined,
     PUBLIC_SUPABASE_ANON_KEY: undefined,
