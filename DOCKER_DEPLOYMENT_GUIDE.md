@@ -113,6 +113,54 @@ The container logs will show:
 
 ## 🐛 Troubleshooting
 
+### Server Error 500 (Your Current Issue)
+
+If you're seeing a 500 error with Astro SSR errors in the logs, here's how to debug:
+
+1. **Check the full logs:**
+   ```bash
+   # Get detailed logs from your Cloud Run service
+   gcloud logs tail --service=nawinie --limit=100
+   
+   # Or view in Google Cloud Console
+   # Go to Cloud Run > nawinie > Logs
+   ```
+
+2. **Check if environment variables are properly set:**
+   ```bash
+   # Test the health endpoint
+   curl https://your-service-url/health
+   
+   # Check environment variables in the service
+   gcloud run services describe nawinie --region=us-central1 --format="table(spec.template.spec.containers[0].env[].name,spec.template.spec.containers[0].env[].value)"
+   ```
+
+3. **Common fixes for SSR errors:**
+   
+   **Missing Environment Variables:**
+   - Ensure `PUBLIC_SUPABASE_URL` is set
+   - Ensure `PUBLIC_SUPABASE_ANON_KEY` is set  
+   - Ensure `JWT_SECRET_KEY` is set
+   - Ensure `PORT=8080` is set
+   
+   **Update environment variables:**
+   ```bash
+   gcloud run services update nawinie --region=us-central1 \
+     --update-env-vars "PUBLIC_SUPABASE_URL=https://your-project.supabase.co,PUBLIC_SUPABASE_ANON_KEY=your-anon-key,JWT_SECRET_KEY=your-jwt-secret,PORT=8080"
+   ```
+
+4. **Redeploy with latest fixes:**
+   ```bash
+   # Rebuild and redeploy
+   docker build -t nawinie .
+   docker tag nawinie gcr.io/YOUR_PROJECT_ID/nawinie:latest
+   docker push gcr.io/YOUR_PROJECT_ID/nawinie:latest
+   
+   # Update the service to use the new image
+   gcloud run services update nawinie --region=us-central1 \
+     --image gcr.io/YOUR_PROJECT_ID/nawinie:latest
+   ```
+
 ### Environment Variables Not Loading
 
 1. **Check if variables are set:**

@@ -18,45 +18,58 @@ function getRuntimeConfig() {
     return window.__RUNTIME_CONFIG__;
   }
   
-  // Build-time environment variables (fallback)
+  // Server-side rendering - use build-time environment variables
+  if (typeof import.meta !== 'undefined' && import.meta.env) {
+    return {
+      PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
+      PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    };
+  }
+  
+  // Fallback for edge cases
   return {
-    PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    PUBLIC_SUPABASE_URL: undefined,
+    PUBLIC_SUPABASE_ANON_KEY: undefined,
   };
 }
 
 // Get configuration from runtime or build-time
-const config = getRuntimeConfig();
-const supabaseUrl = config.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = config.PUBLIC_SUPABASE_ANON_KEY;
+let config: { PUBLIC_SUPABASE_URL?: string; PUBLIC_SUPABASE_ANON_KEY?: string };
+let supabaseUrl: string | undefined;
+let supabaseAnonKey: string | undefined;
 
-// Validate configuration
-if (!supabaseUrl || !supabaseAnonKey) {
-  const errorMsg = `Missing Supabase configuration:
-    - PUBLIC_SUPABASE_URL: ${supabaseUrl ? '✓ Set' : '❌ Missing'}
-    - PUBLIC_SUPABASE_ANON_KEY: ${supabaseAnonKey ? '✓ Set' : '❌ Missing'}
-    
-    If running in Google Cloud, ensure these environment variables are set in:
-    Cloud Run > Service > Variables & Secrets`;
-  
-  console.error(errorMsg);
-  
-  // Don't throw in production, allow app to continue with mock data
-  if (typeof window !== 'undefined') {
-    console.warn('Supabase client will not be available. App will use mock data.');
-  }
+try {
+  config = getRuntimeConfig();
+  supabaseUrl = config.PUBLIC_SUPABASE_URL;
+  supabaseAnonKey = config.PUBLIC_SUPABASE_ANON_KEY;
+} catch (error) {
+  console.warn('Error getting runtime config, using fallbacks:', error);
+  config = {
+    PUBLIC_SUPABASE_URL: undefined,
+    PUBLIC_SUPABASE_ANON_KEY: undefined,
+  };
+  supabaseUrl = undefined;
+  supabaseAnonKey = undefined;
 }
 
 // Create Supabase client with fallback URLs for development
 const fallbackUrl = 'https://placeholder.supabase.co';
-const fallbackKey = 'placeholder-key';
+const fallbackKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE2NDYwNDg0MDAsImV4cCI6MTk2MTYyNDQwMH0.placeholder';
 
-export const supabase = createClient(
-  supabaseUrl || fallbackUrl, 
-  supabaseAnonKey || fallbackKey
-);
+let supabase: ReturnType<typeof createClient>;
 
-// Log configuration status for debugging
+try {
+  supabase = createClient(
+    supabaseUrl || fallbackUrl, 
+    supabaseAnonKey || fallbackKey
+  );
+} catch (error) {
+  console.error('Failed to create Supabase client:', error);
+  // Create a minimal fallback client
+  supabase = createClient(fallbackUrl, fallbackKey);
+}
+
+// Log configuration status for debugging (only in browser)
 if (typeof window !== 'undefined') {
   console.log('Supabase Configuration:', {
     urlSet: !!supabaseUrl,
@@ -64,4 +77,19 @@ if (typeof window !== 'undefined') {
     runtimeConfigAvailable: !!window.__RUNTIME_CONFIG__,
     url: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'Not set'
   });
-} 
+  
+  // Validate configuration in browser
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const errorMsg = `Missing Supabase configuration:
+      - PUBLIC_SUPABASE_URL: ${supabaseUrl ? '✓ Set' : '❌ Missing'}
+      - PUBLIC_SUPABASE_ANON_KEY: ${supabaseAnonKey ? '✓ Set' : '❌ Missing'}
+      
+      If running in Google Cloud, ensure these environment variables are set in:
+      Cloud Run > Service > Variables & Secrets`;
+    
+    console.error(errorMsg);
+    console.warn('Supabase client will not be available. App will use mock data.');
+  }
+}
+
+export { supabase }; 

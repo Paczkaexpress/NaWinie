@@ -134,6 +134,14 @@ fi\n\
 \n\
 echo\n\
 \n\
+# Export environment variables for child processes (Astro SSR)\n\
+export PUBLIC_SUPABASE_URL="${PUBLIC_SUPABASE_URL:-}"\n\
+export PUBLIC_SUPABASE_ANON_KEY="${PUBLIC_SUPABASE_ANON_KEY:-}"\n\
+export PUBLIC_USE_LOCAL_BACKEND="${PUBLIC_USE_LOCAL_BACKEND:-false}"\n\
+export JWT_SECRET_KEY="${JWT_SECRET_KEY:-}"\n\
+export DATABASE_URL="${DATABASE_URL:-sqlite:///./backend/nawinie.db}"\n\
+export CORS_ORIGINS="${CORS_ORIGINS:-http://localhost:3000,http://localhost:4321,http://localhost:8000}"\n\
+\n\
 # Configure frontend environment variables\n\
 source /app/configure-env.sh\n\
 configure_frontend_env\n\
@@ -146,13 +154,69 @@ uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
 BACKEND_PID=$!\n\
 \n\
 # Wait a moment for backend to start\n\
-sleep 2\n\
+sleep 3\n\
 \n\
-# Start Astro frontend\n\
+# Start Astro frontend with proper environment variables\n\
 FRONTEND_PORT=${PORT:-4321}\n\
 echo "🌐 Starting Astro frontend on port $FRONTEND_PORT..."\n\
-cd /app && HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
+echo "Frontend environment variables:"\n\
+echo "  PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+echo "  PUBLIC_USE_LOCAL_BACKEND: ${PUBLIC_USE_LOCAL_BACKEND}"\n\
+echo "  HOST: 0.0.0.0"\n\
+echo "  PORT: $FRONTEND_PORT"\n\
+\n\
+cd /app\n\
+\n\
+# Check if Astro build exists\n\
+if [ ! -f "/app/dist/server/entry.mjs" ]; then\n\
+    echo "❌ Astro server entry point not found"\n\
+    echo "Available files in /app/dist:"\n\
+    ls -la /app/dist/ || echo "dist directory not found"\n\
+    echo "Available files in /app/dist/server:"\n\
+    ls -la /app/dist/server/ || echo "dist/server directory not found"\n\
+    exit 1\n\
+fi\n\
+\n\
+# Start Astro with error handling\n\
+echo "Starting Astro server..."\n\
+if ! HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
+then\n\
+    echo "❌ Failed to start Astro server"\n\
+    exit 1\n\
+fi\n\
+\n\
 FRONTEND_PID=$!\n\
+echo "✅ Frontend started with PID: $FRONTEND_PID"\n\
+\n\
+# Wait a moment to check if frontend started successfully\n\
+sleep 5\n\
+\n\
+# Check if frontend process is still running\n\
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then\n\
+    echo "❌ Frontend process died after startup"\n\
+    echo "Last 50 lines of system logs:"\n\
+    tail -50 /var/log/syslog 2>/dev/null || echo "No system logs available"\n\
+    exit 1\n\
+fi\n\
+\n\
+# Test if frontend is responding\n\
+echo "Testing frontend health..."\n\
+sleep 2\n\
+if curl -f http://localhost:$FRONTEND_PORT/health >/dev/null 2>&1; then\n\
+    echo "✅ Frontend health check passed"\n\
+else\n\
+    echo "⚠️  Frontend health check failed, but process is running"\n\
+    echo "Checking if main page is accessible..."\n\
+    if curl -f http://localhost:$FRONTEND_PORT/ >/dev/null 2>&1; then\n\
+        echo "✅ Frontend main page is accessible"\n\
+    else\n\
+        echo "❌ Frontend main page is not accessible"\n\
+        echo "Process status:"\n\
+        ps aux | grep node || echo "No node processes found"\n\
+        echo "Port status:"\n\
+        netstat -tlnp | grep $FRONTEND_PORT || echo "Port $FRONTEND_PORT not listening"\n\
+    fi\n\
+fi\n\
 \n\
 echo\n\
 echo "✅ Both services started successfully!"\n\

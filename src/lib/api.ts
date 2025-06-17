@@ -22,17 +22,35 @@ declare global {
 
 // Get runtime configuration with fallbacks
 function getRuntimeConfig() {
-  // Browser environment - use runtime config if available
-  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
-    return window.__RUNTIME_CONFIG__;
+  try {
+    // Browser environment - use runtime config if available
+    if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
+      return window.__RUNTIME_CONFIG__;
+    }
+    
+    // Server-side rendering - use build-time environment variables
+    if (typeof import.meta !== 'undefined' && import.meta.env) {
+      return {
+        PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
+        PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+        PUBLIC_USE_LOCAL_BACKEND: import.meta.env.PUBLIC_USE_LOCAL_BACKEND,
+      };
+    }
+    
+    // Fallback for edge cases
+    return {
+      PUBLIC_SUPABASE_URL: undefined,
+      PUBLIC_SUPABASE_ANON_KEY: undefined,
+      PUBLIC_USE_LOCAL_BACKEND: 'false',
+    };
+  } catch (error) {
+    console.warn('Error getting runtime config in API:', error);
+    return {
+      PUBLIC_SUPABASE_URL: undefined,
+      PUBLIC_SUPABASE_ANON_KEY: undefined,
+      PUBLIC_USE_LOCAL_BACKEND: 'false',
+    };
   }
-  
-  // Build-time environment variables (fallback)
-  return {
-    PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
-    PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-    PUBLIC_USE_LOCAL_BACKEND: import.meta.env.PUBLIC_USE_LOCAL_BACKEND,
-  };
 }
 
 // Fast timeout and no retries for quicker fallback to Supabase
