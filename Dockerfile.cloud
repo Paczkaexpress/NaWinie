@@ -11,13 +11,6 @@ ARG PUBLIC_SUPABASE_URL
 ARG PUBLIC_SUPABASE_ANON_KEY
 ARG PUBLIC_USE_LOCAL_BACKEND=false
 
-# Validate required build arguments
-RUN if [ -z "$PUBLIC_SUPABASE_URL" ]; then \
-        echo "Error: PUBLIC_SUPABASE_URL build argument is required" && exit 1; \
-    fi && \
-    if [ -z "$PUBLIC_SUPABASE_ANON_KEY" ]; then \
-        echo "Error: PUBLIC_SUPABASE_ANON_KEY build argument is required" && exit 1; \
-    fi
 
 # Copy frontend package files
 COPY package*.json ./
