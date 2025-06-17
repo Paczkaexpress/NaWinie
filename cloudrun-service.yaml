@@ -25,37 +25,21 @@ spec:
         - name: PORT
           value: "8080"
         
-        # JWT Configuration
-        - name: JWT_SECRET_KEY
-          value: "your-jwt-secret-key-use-secret-manager-in-production"
-        - name: JWT_ALGORITHM
-          value: "HS256"
-        - name: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-          value: "30"
-        
-        # Supabase Configuration
-        - name: PUBLIC_SUPABASE_URL
-          value: "https://your-project-id.supabase.co"
-        - name: PUBLIC_SUPABASE_ANON_KEY
-          value: "your-supabase-anon-key"
-        - name: SUPABASE_URL
-          value: "https://your-project-id.supabase.co"
-        - name: SUPABASE_ANON_KEY
-          value: "your-supabase-anon-key"
-        - name: SUPABASE_SERVICE_ROLE_KEY
-          value: "your-supabase-service-role-key"
-        
-        # Database Configuration
-        - name: DATABASE_URL
-          value: "postgresql://postgres:password@host:5432/database"
-        
         # Application Configuration
         - name: ENVIRONMENT
           value: "production"
         - name: PUBLIC_USE_LOCAL_BACKEND
           value: "false"
-        - name: CORS_ORIGINS
-          value: "https://your-domain.com,http://localhost:3000,http://localhost:4321"
+        
+        # JWT Configuration
+        - name: JWT_ALGORITHM
+          value: "HS256"
+        - name: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+          value: "30"
+        
+        # These will be set via Cloud Run deployment command or Google Cloud Console
+        # DO NOT hardcode sensitive values here - they should come from environment variables
+        # Set these in Google Cloud Console under Cloud Run > Service > Variables & Secrets
         
         resources:
           limits:

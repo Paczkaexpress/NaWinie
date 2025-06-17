@@ -9,7 +9,7 @@ steps:
       - '--build-arg'
       - 'PUBLIC_SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY}'
       - '--build-arg'
-      - 'PUBLIC_USE_LOCAL_BACKEND=${_PUBLIC_USE_LOCAL_BACKEND}'
+      - 'PUBLIC_USE_LOCAL_BACKEND=false'
       - '-t'
       - 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}'
       - '-t'
@@ -23,30 +23,43 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'gcr.io/${PROJECT_ID}/nawinie:latest']
 
-  # Deploy to Cloud Run (optional - uncomment if using Cloud Run)
-  # - name: 'gcr.io/cloud-builders/gcloud'
-  #   args:
-  #     - 'run'
-  #     - 'deploy'
-  #     - 'nawinie'
-  #     - '--image'
-  #     - 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}'
-  #     - '--region'
-  #     - '${_REGION}'
-  #     - '--platform'
-  #     - 'managed'
-  #     - '--allow-unauthenticated'
-  #     - '--set-env-vars'
-  #     - 'JWT_SECRET_KEY=${_JWT_SECRET_KEY},PUBLIC_SUPABASE_URL=${_PUBLIC_SUPABASE_URL},PUBLIC_SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY},DATABASE_URL=${_DATABASE_URL}'
+  # Deploy to Cloud Run with environment variables
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'nawinie'
+      - '--image'
+      - 'gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '4Gi'
+      - '--cpu'
+      - '2'
+      - '--concurrency'
+      - '100'
+      - '--timeout'
+      - '300'
+      - '--set-env-vars'
+      - 'PORT=8080,ENVIRONMENT=production,PUBLIC_USE_LOCAL_BACKEND=false,JWT_ALGORITHM=HS256,JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30'
+      - '--update-env-vars'
+      - 'JWT_SECRET_KEY=${_JWT_SECRET_KEY},PUBLIC_SUPABASE_URL=${_PUBLIC_SUPABASE_URL},PUBLIC_SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY},SUPABASE_URL=${_PUBLIC_SUPABASE_URL},SUPABASE_ANON_KEY=${_PUBLIC_SUPABASE_ANON_KEY},DATABASE_URL=${_DATABASE_URL},CORS_ORIGINS=${_CORS_ORIGINS}'
 
-# Build-time substitutions (set these in Cloud Build triggers or pass via gcloud)
+# Build-time substitutions - these MUST be provided when running the build
+# Either set in Cloud Build triggers or pass via gcloud builds submit
 substitutions:
-  _PUBLIC_SUPABASE_URL: 'https://your-project-id.supabase.co'
-  _PUBLIC_SUPABASE_ANON_KEY: 'your-supabase-anon-key'
-  _PUBLIC_USE_LOCAL_BACKEND: 'false'
   _REGION: 'us-central1'
-  _JWT_SECRET_KEY: 'your-jwt-secret-key'
-  _DATABASE_URL: 'postgresql://postgres:password@host:5432/database'
+  # The following variables are REQUIRED and should be set in your Cloud Build trigger
+  # or passed as substitutions when running gcloud builds submit:
+  # _PUBLIC_SUPABASE_URL
+  # _PUBLIC_SUPABASE_ANON_KEY  
+  # _JWT_SECRET_KEY
+  # _DATABASE_URL
+  # _CORS_ORIGINS
 
 # Image will be stored in Google Container Registry
 images: ['gcr.io/${PROJECT_ID}/nawinie:${SHORT_SHA}', 'gcr.io/${PROJECT_ID}/nawinie:latest']

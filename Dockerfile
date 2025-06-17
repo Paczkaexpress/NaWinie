@@ -6,11 +6,6 @@ FROM node:18-slim AS frontend-builder
 
 WORKDIR /app
 
-# Define build arguments for environment variables (for cloud deployment)
-ARG PUBLIC_SUPABASE_URL
-ARG PUBLIC_SUPABASE_ANON_KEY
-ARG PUBLIC_USE_LOCAL_BACKEND=false
-
 # Copy frontend package files
 COPY package*.json ./
 COPY tsconfig.json ./
@@ -19,24 +14,18 @@ COPY tailwind.config.mjs ./
 COPY vitest.config.ts ./
 
 # Install dependencies including dev deps needed for Astro build
-# Astro/Rollup needs platform-specific optional dependencies
 RUN npm install --include=optional
 
 # Copy frontend source code
 COPY src/ ./src/
 
-# Build with environment variables from either build args (cloud) or .env file (local)
-# The build script will handle missing .env gracefully
-RUN if [ -f ".env" ]; then \
-        echo "Building with .env file (local development)..." && \
-        export $(grep -v '^#' .env | xargs) && npm run build; \
-    else \
-        echo "Building with environment variables (cloud deployment)..." && \
-        export PUBLIC_SUPABASE_URL="${PUBLIC_SUPABASE_URL}" && \
-        export PUBLIC_SUPABASE_ANON_KEY="${PUBLIC_SUPABASE_ANON_KEY}" && \
-        export PUBLIC_USE_LOCAL_BACKEND="${PUBLIC_USE_LOCAL_BACKEND}" && \
-        npm run build; \
-    fi
+# Create a placeholder .env for build (will be replaced at runtime)
+RUN echo 'PUBLIC_SUPABASE_URL=placeholder-will-be-replaced-at-runtime' > .env && \
+    echo 'PUBLIC_SUPABASE_ANON_KEY=placeholder-will-be-replaced-at-runtime' >> .env && \
+    echo 'PUBLIC_USE_LOCAL_BACKEND=false' >> .env
+
+# Build frontend with placeholder values
+RUN npm run build
 
 # Stage 2: Setup Python Backend
 FROM python:3.11-slim AS backend-builder
@@ -63,6 +52,7 @@ WORKDIR /app
 # Install system dependencies for runtime
 RUN apt-get update && apt-get install -y \
     curl \
+    jq \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
@@ -84,40 +74,100 @@ COPY --from=frontend-builder /app/node_modules ./node_modules
 RUN mkdir -p /app/logs /app/backend/images && \
     chown -R appuser:appuser /app
 
-# Create startup script that works for both local and cloud environments
+# Create runtime environment configuration script
+RUN echo '#!/bin/bash\n\
+# Configure runtime environment variables for frontend\n\
+configure_frontend_env() {\n\
+    echo "Configuring frontend environment variables..."\n\
+    \n\
+    # Create runtime environment configuration for frontend\n\
+    cat > /app/dist/runtime-config.js << EOF\n\
+window.__RUNTIME_CONFIG__ = {\n\
+  PUBLIC_SUPABASE_URL: "${PUBLIC_SUPABASE_URL:-}",\n\
+  PUBLIC_SUPABASE_ANON_KEY: "${PUBLIC_SUPABASE_ANON_KEY:-}",\n\
+  PUBLIC_USE_LOCAL_BACKEND: "${PUBLIC_USE_LOCAL_BACKEND:-false}"\n\
+};\n\
+EOF\n\
+    \n\
+    # Inject runtime config into all HTML files\n\
+    find /app/dist -name "*.html" -type f -exec sed -i "s|<head>|<head><script src=\"/runtime-config.js\"></script>|g" {} +\n\
+    \n\
+    echo "Frontend environment configuration completed."\n\
+}\n\
+' > /app/configure-env.sh
+
+# Create enhanced startup script
 RUN echo '#!/bin/bash\n\
 set -e\n\
 \n\
-# Load environment variables from .env file if it exists (local development)\n\
-if [ -f "/app/.env" ] && [ -s "/app/.env" ]; then\n\
-    echo "Loading environment variables from .env file (local development)..."\n\
-    export $(grep -v "^#" /app/.env | xargs)\n\
-    echo "Environment loaded from .env file."\n\
-else\n\
-    echo "No .env file found or file is empty. Using environment variables from cloud platform."\n\
-    if [ -n "$PUBLIC_SUPABASE_URL" ]; then\n\
-        echo "PUBLIC_SUPABASE_URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+echo "=== Na Winie Application Startup ==="\n\
+echo "Environment: ${ENVIRONMENT:-production}"\n\
+echo "Port: ${PORT:-4321}"\n\
+echo\n\
+\n\
+# Check for required environment variables\n\
+required_vars=("PUBLIC_SUPABASE_URL" "PUBLIC_SUPABASE_ANON_KEY" "JWT_SECRET_KEY")\n\
+missing_vars=()\n\
+\n\
+for var in "${required_vars[@]}"; do\n\
+    if [ -z "${!var}" ]; then\n\
+        missing_vars+=("$var")\n\
     else\n\
-        echo "Warning: PUBLIC_SUPABASE_URL not set"\n\
+        echo "✓ $var is set"\n\
     fi\n\
+done\n\
+\n\
+if [ ${#missing_vars[@]} -ne 0 ]; then\n\
+    echo "❌ Missing required environment variables:"\n\
+    printf "   %s\n" "${missing_vars[@]}"\n\
+    echo\n\
+    echo "Please set these environment variables in your Cloud Run service:"\n\
+    echo "1. Go to Google Cloud Console > Cloud Run > Services"\n\
+    echo "2. Click on your service > Edit & Deploy New Revision"\n\
+    echo "3. Go to Variables & Secrets tab"\n\
+    echo "4. Add the missing environment variables"\n\
+    echo\n\
+    echo "Continuing startup with warnings..."\n\
+else\n\
+    echo "✅ All required environment variables are set"\n\
 fi\n\
 \n\
-echo "Starting FastAPI backend..."\n\
+echo\n\
+\n\
+# Configure frontend environment variables\n\
+source /app/configure-env.sh\n\
+configure_frontend_env\n\
+\n\
+echo "Starting services..."\n\
+\n\
+# Start FastAPI backend\n\
+echo "🚀 Starting FastAPI backend on port 8000..."\n\
 uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
 BACKEND_PID=$!\n\
-echo "Starting Astro frontend..."\n\
-# Use PORT environment variable for Cloud Run compatibility (defaults to 4321 for local)\n\
+\n\
+# Wait a moment for backend to start\n\
+sleep 2\n\
+\n\
+# Start Astro frontend\n\
 FRONTEND_PORT=${PORT:-4321}\n\
+echo "🌐 Starting Astro frontend on port $FRONTEND_PORT..."\n\
 cd /app && HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
 FRONTEND_PID=$!\n\
-echo "Both servers started. Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID"\n\
-echo "Frontend running on port: $FRONTEND_PORT, Backend running on port: 8000"\n\
+\n\
+echo\n\
+echo "✅ Both services started successfully!"\n\
+echo "   - Backend: http://localhost:8000 (PID: $BACKEND_PID)"\n\
+echo "   - Frontend: http://localhost:$FRONTEND_PORT (PID: $FRONTEND_PID)"\n\
+echo "   - API Docs: http://localhost:8000/docs"\n\
+echo\n\
 \n\
 # Function to handle shutdown\n\
 shutdown() {\n\
-    echo "Shutting down..."\n\
+    echo\n\
+    echo "🛑 Shutting down services..."\n\
     kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
     wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
+    echo "👋 Shutdown complete"\n\
     exit 0\n\
 }\n\
 \n\
@@ -128,26 +178,26 @@ trap shutdown SIGTERM SIGINT\n\
 wait $BACKEND_PID $FRONTEND_PID\n\
 ' > /app/start.sh
 
-RUN chmod +x /app/start.sh && chown appuser:appuser /app/start.sh
+RUN chmod +x /app/start.sh /app/configure-env.sh && \
+    chown appuser:appuser /app/start.sh /app/configure-env.sh
 
 # Switch to non-root user
 USER appuser
 
-# Expose ports (Cloud Run will use PORT env var, defaults to 4321 for local)
+# Expose ports
 EXPOSE 4321 8000 8080
 
-# Health check (updated to check both services)
+# Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/ && curl -f http://localhost:${PORT:-4321}/ || exit 1
+    CMD curl -f http://localhost:8000/docs > /dev/null && curl -f http://localhost:${PORT:-4321}/ > /dev/null || exit 1
 
-# Default environment variables (can be overridden)
+# Default environment variables (can be overridden at runtime)
 ENV PYTHONPATH=/app \
     PYTHONUNBUFFERED=1 \
     ENVIRONMENT=production \
     JWT_ALGORITHM=HS256 \
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30 \
-    CORS_ORIGINS=http://localhost:3000,http://localhost:4321,http://localhost:8000 \
-    DATABASE_URL=sqlite:///./backend/nawinie.db
+    PUBLIC_USE_LOCAL_BACKEND=false
 
 # Command to run both servers
 CMD ["/app/start.sh"] 

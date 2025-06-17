@@ -9,9 +9,36 @@ interface FetchOptions extends RequestInit {
   retry?: number;
 }
 
+// Runtime configuration that will be injected by Docker container
+declare global {
+  interface Window {
+    __RUNTIME_CONFIG__?: {
+      PUBLIC_SUPABASE_URL?: string;
+      PUBLIC_SUPABASE_ANON_KEY?: string;
+      PUBLIC_USE_LOCAL_BACKEND?: string;
+    };
+  }
+}
+
+// Get runtime configuration with fallbacks
+function getRuntimeConfig() {
+  // Browser environment - use runtime config if available
+  if (typeof window !== 'undefined' && window.__RUNTIME_CONFIG__) {
+    return window.__RUNTIME_CONFIG__;
+  }
+  
+  // Build-time environment variables (fallback)
+  return {
+    PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
+    PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    PUBLIC_USE_LOCAL_BACKEND: import.meta.env.PUBLIC_USE_LOCAL_BACKEND,
+  };
+}
+
 // Fast timeout and no retries for quicker fallback to Supabase
 const DEFAULT_TIMEOUT = 500; // 500ms timeout instead of 5000ms
 const DEFAULT_RETRIES = 0; // No retries instead of 3 retries
+
 // Use a mock URL in test environment
 const isTest = (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') ||
   (typeof import.meta.env.MODE !== 'undefined' && import.meta.env.MODE === 'test');
@@ -23,7 +50,17 @@ const SAFE_API_BASE_URL = API_BASE_URL || "http://mock-api.test/api";
 
 // In test environment, always use local backend so MSW can intercept HTTP calls
 // In production, only use if explicitly enabled
-const USE_LOCAL_BACKEND = isTest || import.meta.env.PUBLIC_USE_LOCAL_BACKEND === 'true';
+const USE_LOCAL_BACKEND = isTest || getRuntimeConfig().PUBLIC_USE_LOCAL_BACKEND === 'true';
+
+// Log configuration for debugging
+if (typeof window !== 'undefined') {
+  console.log('API Configuration:', {
+    useLocalBackend: USE_LOCAL_BACKEND,
+    apiBaseUrl: SAFE_API_BASE_URL,
+    runtimeConfigAvailable: !!window.__RUNTIME_CONFIG__,
+    supabaseUrlSet: !!getRuntimeConfig().PUBLIC_SUPABASE_URL
+  });
+}
 
 async function fetchWithRetry<T>(url: string, options: FetchOptions = {}): Promise<T> {
   const { timeoutMs = DEFAULT_TIMEOUT, retry = DEFAULT_RETRIES, ...fetchOpts } = options;
