@@ -116,7 +116,7 @@ for var in "${required_vars[@]}"; do\n\
     if [ -z "${!var}" ]; then\n\
         missing_vars+=("$var")\n\
     else\n\
-        echo "✓ $var is set (length: ${#var})")\n\
+        echo "✓ $var is set (length: ${#var})"\n\
     fi\n\
 done\n\
 \n\
