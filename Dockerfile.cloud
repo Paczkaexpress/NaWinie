@@ -24,8 +24,6 @@ RUN npm ci --include=optional
 
 # Copy frontend source code
 COPY src/ ./src/
-COPY public/ ./public/
-
 # Build with environment variables from build arguments
 RUN npm run build
 
