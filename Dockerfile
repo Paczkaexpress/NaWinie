@@ -87,11 +87,23 @@ window.__RUNTIME_CONFIG__ = {\n\
   PUBLIC_SUPABASE_ANON_KEY: "${PUBLIC_SUPABASE_ANON_KEY:-}",\n\
   PUBLIC_USE_LOCAL_BACKEND: "${PUBLIC_USE_LOCAL_BACKEND:-false}"\n\
 };\n\
+console.log("Runtime config loaded:", window.__RUNTIME_CONFIG__);\n\
 EOF\n\
     \n\
-    # Inject runtime config into all HTML files\n\
-    find /app/dist -name "*.html" -type f -exec sed -i "s|<head>|<head><script src=\"/runtime-config.js\"></script>|g" {} +\n\
+    # Make the config file accessible\n\
+    chmod 644 /app/dist/runtime-config.js\n\
     \n\
+    # Inject runtime config into all HTML files in the client directory\n\
+    if [ -d "/app/dist/client" ]; then\n\
+        find /app/dist/client -name "*.html" -type f -exec sed -i "s|<head>|<head><script src=\"/runtime-config.js\"></script>|g" {} + 2>/dev/null || true\n\
+    fi\n\
+    \n\
+    # Also check the main dist directory\n\
+    find /app/dist -maxdepth 1 -name "*.html" -type f -exec sed -i "s|<head>|<head><script src=\"/runtime-config.js\"></script>|g" {} + 2>/dev/null || true\n\
+    \n\
+    echo "Runtime config file created at /app/dist/runtime-config.js"\n\
+    echo "Config content:"\n\
+    cat /app/dist/runtime-config.js\n\
     echo "Frontend environment configuration completed."\n\
 }\n\
 ' > /app/configure-env.sh
