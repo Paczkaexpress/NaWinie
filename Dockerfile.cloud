@@ -1,0 +1,161 @@
+# Cloud-Only Dockerfile for Na Winie (Google Cloud deployment)
+# This Dockerfile is optimized for Google Cloud Run and does not support local .env files
+
+# Stage 1: Build Frontend (Astro + React)
+FROM node:18-slim AS frontend-builder
+
+WORKDIR /app
+
+# Build arguments for environment variables (required for cloud deployment)
+ARG PUBLIC_SUPABASE_URL
+ARG PUBLIC_SUPABASE_ANON_KEY
+ARG PUBLIC_USE_LOCAL_BACKEND=false
+
+# Validate required build arguments
+RUN if [ -z "$PUBLIC_SUPABASE_URL" ]; then \
+        echo "Error: PUBLIC_SUPABASE_URL build argument is required" && exit 1; \
+    fi && \
+    if [ -z "$PUBLIC_SUPABASE_ANON_KEY" ]; then \
+        echo "Error: PUBLIC_SUPABASE_ANON_KEY build argument is required" && exit 1; \
+    fi
+
+# Copy frontend package files
+COPY package*.json ./
+COPY tsconfig.json ./
+COPY astro.config.mjs ./
+COPY tailwind.config.mjs ./
+COPY vitest.config.ts ./
+
+# Install dependencies including dev deps needed for Astro build
+RUN npm ci --include=optional
+
+# Copy frontend source code
+COPY src/ ./src/
+COPY public/ ./public/
+
+# Build with environment variables from build arguments
+RUN echo "Building with cloud environment variables..." && \
+    export PUBLIC_SUPABASE_URL="${PUBLIC_SUPABASE_URL}" && \
+    export PUBLIC_SUPABASE_ANON_KEY="${PUBLIC_SUPABASE_ANON_KEY}" && \
+    export PUBLIC_USE_LOCAL_BACKEND="${PUBLIC_USE_LOCAL_BACKEND}" && \
+    npm run build
+
+# Stage 2: Setup Python Backend
+FROM python:3.11-slim AS backend-builder
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Python requirements
+COPY requirements.txt ./
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Stage 3: Production Runtime
+FROM python:3.11-slim AS production
+
+WORKDIR /app
+
+# Install system dependencies for runtime
+RUN apt-get update && apt-get install -y \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser --disabled-password --gecos '' appuser
+
+# Copy Python dependencies from builder stage
+COPY --from=backend-builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=backend-builder /usr/local/bin /usr/local/bin
+
+# Copy backend source code
+COPY backend/ ./backend/
+COPY db/ ./db/
+
+# Copy built frontend from frontend-builder stage
+COPY --from=frontend-builder /app/dist ./dist
+COPY --from=frontend-builder /app/node_modules ./node_modules
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/backend/images && \
+    chown -R appuser:appuser /app
+
+# Create cloud-optimized startup script
+RUN echo '#!/bin/bash\n\
+set -e\n\
+\n\
+echo "🚀 Starting Na Winie in Cloud Run..."\n\
+echo "Environment: ${ENVIRONMENT:-production}"\n\
+echo "Port: ${PORT:-8080}"\n\
+\n\
+# Validate required environment variables\n\
+if [ -z "$PUBLIC_SUPABASE_URL" ]; then\n\
+    echo "❌ Error: PUBLIC_SUPABASE_URL environment variable is required"\n\
+    exit 1\n\
+fi\n\
+\n\
+if [ -z "$JWT_SECRET_KEY" ]; then\n\
+    echo "❌ Error: JWT_SECRET_KEY environment variable is required"\n\
+    exit 1\n\
+fi\n\
+\n\
+echo "✅ Environment variables validated"\n\
+echo "Supabase URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
+\n\
+echo "🔧 Starting FastAPI backend..."\n\
+uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
+BACKEND_PID=$!\n\
+\n\
+echo "🌐 Starting Astro frontend..."\n\
+FRONTEND_PORT=${PORT:-8080}\n\
+cd /app && HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
+FRONTEND_PID=$!\n\
+\n\
+echo "✅ Both servers started successfully"\n\
+echo "   Frontend: http://0.0.0.0:$FRONTEND_PORT (PID: $FRONTEND_PID)"\n\
+echo "   Backend:  http://0.0.0.0:8000 (PID: $BACKEND_PID)"\n\
+\n\
+# Function to handle shutdown\n\
+shutdown() {\n\
+    echo "🛑 Shutting down servers..."\n\
+    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
+    wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
+    echo "✅ Shutdown complete"\n\
+    exit 0\n\
+}\n\
+\n\
+# Trap SIGTERM and SIGINT\n\
+trap shutdown SIGTERM SIGINT\n\
+\n\
+# Wait for processes\n\
+wait $BACKEND_PID $FRONTEND_PID\n\
+' > /app/start.sh
+
+RUN chmod +x /app/start.sh && chown appuser:appuser /app/start.sh
+
+# Switch to non-root user
+USER appuser
+
+# Expose ports (Cloud Run will use PORT env var)
+EXPOSE 8080 8000
+
+# Health check optimized for Cloud Run
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${PORT:-8080}/ || exit 1
+
+# Cloud Run optimized environment variables
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=production \
+    JWT_ALGORITHM=HS256 \
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30 \
+    PUBLIC_USE_LOCAL_BACKEND=false
+
+# Command to run both servers
+CMD ["/app/start.sh"] 

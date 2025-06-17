@@ -1,0 +1,51 @@
+# Cloud-Only Docker Compose for Google Cloud Build
+# This configuration is optimized for Google Cloud and does not support local development
+
+services:
+  nawinie-cloud:
+    build:
+      context: .
+      dockerfile: Dockerfile.cloud
+      args:
+        # Required build arguments for cloud deployment
+        - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
+        - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+        - PUBLIC_USE_LOCAL_BACKEND=false
+    ports:
+      - "8080:8080"  # Cloud Run standard port
+    environment:
+      # Required Cloud Environment Variables
+      - PORT=8080
+      - ENVIRONMENT=production
+      
+      # Required JWT Configuration
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+      
+      # Required Database Configuration
+      - DATABASE_URL=${DATABASE_URL}
+      
+      # Required Supabase Configuration
+      - PUBLIC_SUPABASE_URL=${PUBLIC_SUPABASE_URL}
+      - PUBLIC_SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_URL=${PUBLIC_SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      
+      # Optional Configuration
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://your-domain.com}
+      - PUBLIC_USE_LOCAL_BACKEND=false
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+# Note: This compose file requires all environment variables to be set
+# before running. Use it primarily for testing cloud builds locally.
+# For actual cloud deployment, use Cloud Run directly. 
