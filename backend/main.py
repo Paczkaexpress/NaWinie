@@ -47,9 +47,15 @@ app = FastAPI(
 app.openapi = lambda: custom_openapi(app)
 
 # Configure CORS
+import os
+cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:4321,http://localhost:3000").split(",")
+if os.getenv("ENVIRONMENT") == "production":
+    # In production, allow all origins since frontend and backend are on same host
+    cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4321", "http://localhost:3000"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

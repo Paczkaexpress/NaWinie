@@ -61,10 +61,8 @@ const DEFAULT_RETRIES = 0; // No retries instead of 3 retries
 const isTest = (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') ||
   (typeof import.meta.env.MODE !== 'undefined' && import.meta.env.MODE === 'test');
 
-// In production, use relative URLs since nginx will proxy /api/ to the backend
-// In development, use localhost:8000 directly
-const API_BASE_URL = isTest ? "http://mock-api.test/api" : 
-  (typeof window !== 'undefined' ? "/api" : "http://localhost:8000/api");
+// Use internal localhost URL for backend API
+const API_BASE_URL = isTest ? "http://mock-api.test/api" : "http://localhost:8000/api";
 
 // Ensure we never have an empty API_BASE_URL  
 const SAFE_API_BASE_URL = API_BASE_URL || "http://mock-api.test/api";

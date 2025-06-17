@@ -7,21 +7,23 @@ This guide explains how to deploy your Na Winie application to Google Cloud usin
 Your updated Docker container now:
 1. **Builds the frontend with placeholder values** (no secrets needed at build time)
 2. **Injects real environment variables at runtime** when the container starts
-3. **Uses nginx as a reverse proxy** on port 8080 (Cloud Run requirement)
-4. **Runs backend on port 8000** and **frontend on port 4321** behind nginx
-5. **Automatically configures both frontend and backend** using environment variables from Google Cloud
+3. **Runs the frontend as the main service** on port 8080 (Cloud Run requirement)
+4. **Runs the backend on port 8000** in the background
+5. **Frontend communicates with backend** via internal localhost URLs
+6. **Automatically configures both frontend and backend** using environment variables from Google Cloud
 
-### Architecture:
+### Simplified Architecture:
 ```
-Cloud Run (port 8080) → nginx → Frontend (port 4321)
-                              → Backend API (port 8000)
+Cloud Run (port 8080) → Astro Frontend (port 8080)
+                              ↓
+                        Backend API (port 8000, internal)
 ```
 
 This setup ensures:
-- Cloud Run only sees one service on port 8080 ✅
-- Frontend and backend can communicate internally
-- All API calls go through `/api/` path
-- Static files are served efficiently
+- Cloud Run sees only one service on port 8080 ✅
+- Frontend serves all requests and pages
+- Backend runs internally for API calls
+- Environment variables are properly injected at runtime
 
 ## 🚀 Deployment Steps
 
