@@ -30,36 +30,25 @@ spec:
           value: "8080"
         - name: ENVIRONMENT
           value: "production"
-        
-        # JWT Configuration (Use Secret Manager in production)
-        - name: JWT_SECRET_KEY
-          value: "REPLACE_WITH_YOUR_JWT_SECRET_KEY"
         - name: JWT_ALGORITHM
           value: "HS256"
         - name: JWT_ACCESS_TOKEN_EXPIRE_MINUTES
           value: "30"
-        
-        # Supabase Configuration
-        - name: PUBLIC_SUPABASE_URL
-          value: "https://YOUR_PROJECT_ID.supabase.co"
-        - name: PUBLIC_SUPABASE_ANON_KEY
-          value: "REPLACE_WITH_YOUR_SUPABASE_ANON_KEY"
-        - name: SUPABASE_URL
-          value: "https://YOUR_PROJECT_ID.supabase.co"
-        - name: SUPABASE_ANON_KEY
-          value: "REPLACE_WITH_YOUR_SUPABASE_ANON_KEY"
-        - name: SUPABASE_SERVICE_ROLE_KEY
-          value: "REPLACE_WITH_YOUR_SUPABASE_SERVICE_ROLE_KEY"
-        
-        # Database Configuration
-        - name: DATABASE_URL
-          value: "REPLACE_WITH_YOUR_DATABASE_URL"
-        
-        # Application Configuration
         - name: PUBLIC_USE_LOCAL_BACKEND
           value: "false"
         - name: CORS_ORIGINS
           value: "https://your-domain.com"
+        
+        # These will be set via Google Cloud Console Environment Variables
+        # PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+        # SUPABASE_URL=https://your-project.supabase.co
+        # DATABASE_URL=postgresql://...
+        
+        # These will be set via Google Secret Manager
+        # JWT_SECRET_KEY (from secret: jwt-secret-key)
+        # PUBLIC_SUPABASE_ANON_KEY (from secret: supabase-anon-key) 
+        # SUPABASE_ANON_KEY (from secret: supabase-anon-key)
+        # SUPABASE_SERVICE_ROLE_KEY (from secret: supabase-service-role-key)
         
         resources:
           limits:

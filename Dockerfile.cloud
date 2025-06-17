@@ -34,11 +34,7 @@ COPY src/ ./src/
 COPY public/ ./public/
 
 # Build with environment variables from build arguments
-RUN echo "Building with cloud environment variables..." && \
-    export PUBLIC_SUPABASE_URL="${PUBLIC_SUPABASE_URL}" && \
-    export PUBLIC_SUPABASE_ANON_KEY="${PUBLIC_SUPABASE_ANON_KEY}" && \
-    export PUBLIC_USE_LOCAL_BACKEND="${PUBLIC_USE_LOCAL_BACKEND}" && \
-    npm run build
+RUN npm run build
 
 # Stage 2: Setup Python Backend
 FROM python:3.11-slim AS backend-builder
@@ -86,58 +82,35 @@ COPY --from=frontend-builder /app/node_modules ./node_modules
 RUN mkdir -p /app/logs /app/backend/images && \
     chown -R appuser:appuser /app
 
-# Create cloud-optimized startup script
-RUN echo '#!/bin/bash\n\
-set -e\n\
-\n\
-echo "🚀 Starting Na Winie in Cloud Run..."\n\
-echo "Environment: ${ENVIRONMENT:-production}"\n\
-echo "Port: ${PORT:-8080}"\n\
-\n\
-# Validate required environment variables\n\
-if [ -z "$PUBLIC_SUPABASE_URL" ]; then\n\
-    echo "❌ Error: PUBLIC_SUPABASE_URL environment variable is required"\n\
-    exit 1\n\
-fi\n\
-\n\
-if [ -z "$JWT_SECRET_KEY" ]; then\n\
-    echo "❌ Error: JWT_SECRET_KEY environment variable is required"\n\
-    exit 1\n\
-fi\n\
-\n\
-echo "✅ Environment variables validated"\n\
-echo "Supabase URL: ${PUBLIC_SUPABASE_URL:0:30}..."\n\
-\n\
-echo "🔧 Starting FastAPI backend..."\n\
-uvicorn backend.main:app --host 0.0.0.0 --port 8000 &\n\
-BACKEND_PID=$!\n\
-\n\
-echo "🌐 Starting Astro frontend..."\n\
-FRONTEND_PORT=${PORT:-8080}\n\
-cd /app && HOST=0.0.0.0 PORT=$FRONTEND_PORT node dist/server/entry.mjs &\n\
-FRONTEND_PID=$!\n\
-\n\
-echo "✅ Both servers started successfully"\n\
-echo "   Frontend: http://0.0.0.0:$FRONTEND_PORT (PID: $FRONTEND_PID)"\n\
-echo "   Backend:  http://0.0.0.0:8000 (PID: $BACKEND_PID)"\n\
-\n\
-# Function to handle shutdown\n\
-shutdown() {\n\
-    echo "🛑 Shutting down servers..."\n\
-    kill $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
-    wait $BACKEND_PID $FRONTEND_PID 2>/dev/null || true\n\
-    echo "✅ Shutdown complete"\n\
-    exit 0\n\
-}\n\
-\n\
-# Trap SIGTERM and SIGINT\n\
-trap shutdown SIGTERM SIGINT\n\
-\n\
-# Wait for processes\n\
-wait $BACKEND_PID $FRONTEND_PID\n\
-' > /app/start.sh
+# Install supervisor to manage multiple processes
+RUN apt-get update && apt-get install -y supervisor && rm -rf /var/lib/apt/lists/*
 
-RUN chmod +x /app/start.sh && chown appuser:appuser /app/start.sh
+# Create supervisor configuration
+RUN echo '[supervisord]\n\
+nodaemon=true\n\
+user=appuser\n\
+logfile=/app/logs/supervisord.log\n\
+pidfile=/app/logs/supervisord.pid\n\
+\n\
+[program:backend]\n\
+command=uvicorn backend.main:app --host 0.0.0.0 --port 8000\n\
+directory=/app\n\
+user=appuser\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/app/logs/backend.log\n\
+stderr_logfile=/app/logs/backend.log\n\
+\n\
+[program:frontend]\n\
+command=node dist/server/entry.mjs\n\
+directory=/app\n\
+user=appuser\n\
+autostart=true\n\
+autorestart=true\n\
+stdout_logfile=/app/logs/frontend.log\n\
+stderr_logfile=/app/logs/frontend.log\n\
+environment=HOST="0.0.0.0",PORT="%(ENV_PORT)s"\n\
+' > /etc/supervisor/conf.d/nawinie.conf
 
 # Switch to non-root user
 USER appuser
@@ -157,5 +130,5 @@ ENV PYTHONPATH=/app \
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30 \
     PUBLIC_USE_LOCAL_BACKEND=false
 
-# Command to run both servers
-CMD ["/app/start.sh"] 
+# Command to run supervisor (manages both servers)
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/nawinie.conf"] 
